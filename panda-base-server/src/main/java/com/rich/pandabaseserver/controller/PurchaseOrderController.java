@@ -115,7 +115,7 @@ public class PurchaseOrderController {
 
         long current = orderQueryRequest.getPageNum();
         long size = orderQueryRequest.getPageSize();
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+//        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
 
         // 只查询当前用户的订单
         orderQueryRequest.setUserId(loginUser.getId());
@@ -157,5 +157,26 @@ public class PurchaseOrderController {
         ThrowUtils.throwIf(!order.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限查看此订单");
 
         return ResultUtils.success(purchaseOrderService.getPurchaseOrderVO(order));
+    }
+
+    /**
+     * 检查用户是否购买过指定商品
+     *
+     * @param productId 商品ID
+     * @param request HTTP请求
+     * @return 是否已购买
+     */
+    @GetMapping("/check/purchased")
+    @Operation(summary = "检查是否已购买", description = "检查用户是否购买过指定商品")
+    public BaseResponse<Boolean> checkPurchased(@RequestParam Long productId,
+                                                HttpServletRequest request) {
+        ThrowUtils.throwIf(productId == null || productId <= 0, ErrorCode.PARAMS_ERROR, "商品ID无效");
+
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        Boolean purchased = purchaseOrderService.checkUserPurchased(loginUser.getId(), productId);
+        return ResultUtils.success(purchased);
     }
 }

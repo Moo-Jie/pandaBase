@@ -108,4 +108,10 @@ public class PurchaseOrderVO implements Serializable {
      */
     @Schema(description = "订单商品明细列表")
     private List<OrderItemVO> orderItems;
+
+    /**
+     * 兑换码列表
+     */
+    @Schema(description = "兑换码列表")
+    private List<String> redemptionCodes;
 }

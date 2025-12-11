@@ -80,9 +80,14 @@ public class MembershipCard implements Serializable {
     private LocalDateTime endTime;
 
     /**
-     * 来源订单ID
+     * 来源订单ID（购买方式）
      */
     private Long orderId;
+
+    /**
+     * 来源兑换记录ID（兑换方式）
+     */
+    private Long redemptionRecordId;
 
     /**
      * 创建时间

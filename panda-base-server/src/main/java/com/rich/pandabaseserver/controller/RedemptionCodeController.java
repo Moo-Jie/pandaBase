@@ -1,6 +1,16 @@
 package com.rich.pandabaseserver.controller;
 
 import com.mybatisflex.core.paginate.Page;
+import com.rich.pandabaseserver.common.ResultUtils;
+import com.rich.pandabaseserver.common.response.BaseResponse;
+import com.rich.pandabaseserver.exception.ErrorCode;
+import com.rich.pandabaseserver.exception.ThrowUtils;
+import com.rich.pandabaseserver.model.dto.redemption.RedeemRequest;
+import com.rich.pandabaseserver.model.entity.User;
+import com.rich.pandabaseserver.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,10 +31,14 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/redemptionCode")
+@Tag(name = "兑换码管理", description = "兑换码相关接口")
 public class RedemptionCodeController {
 
     @Autowired
     private RedemptionCodeService redemptionCodeService;
+
+    @Autowired
+    private UserService userService;
 
     /**
      * 保存兑换码表。
@@ -89,6 +103,35 @@ public class RedemptionCodeController {
     @GetMapping("page")
     public Page<RedemptionCode> page(Page<RedemptionCode> page) {
         return redemptionCodeService.page(page);
+    }
+
+    /**
+     * 兑换码兑换
+     *
+     * @param redeemRequest 兑换请求
+     * @param request HTTP请求
+     * @return 兑换结果
+     */
+    @PostMapping("/redeem")
+    @Operation(summary = "兑换码兑换", description = "用户输入兑换码进行兑换")
+    public BaseResponse<Boolean> redeemCode(@RequestBody RedeemRequest redeemRequest,
+                                           HttpServletRequest request) {
+        ThrowUtils.throwIf(redeemRequest == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(redeemRequest.getCode() == null || redeemRequest.getCode().trim().isEmpty(),
+                ErrorCode.PARAMS_ERROR, "请输入兑换码");
+
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        redeemRequest.setUserId(loginUser.getId());
+        Boolean result = redemptionCodeService.redeemCode(
+                redeemRequest.getCode(),
+                redeemRequest.getUserId(),
+                redeemRequest.getAddressId()
+        );
+
+        return ResultUtils.success(result);
     }
 
 }

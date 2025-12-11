@@ -98,7 +98,8 @@ CREATE TABLE `membership_card` (
   `used_count` int NOT NULL DEFAULT '0' COMMENT '已使用次数',
   `start_time` datetime DEFAULT NULL COMMENT '开始时间',
   `end_time` datetime DEFAULT NULL COMMENT '结束时间',
-  `order_id` bigint NOT NULL COMMENT '来源订单ID',
+  `order_id` bigint DEFAULT NULL COMMENT '来源订单ID（购买方式）',
+  `redemption_record_id` bigint DEFAULT NULL COMMENT '来源兑换记录ID（兑换方式）',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
@@ -107,7 +108,8 @@ CREATE TABLE `membership_card` (
   KEY `idx_product` (`product_id`),
   KEY `idx_status` (`status`),
   KEY `idx_end_time` (`end_time`),
-  KEY `idx_order` (`order_id`)
+  KEY `idx_order` (`order_id`),
+  KEY `idx_redemption` (`redemption_record_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员卡表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 

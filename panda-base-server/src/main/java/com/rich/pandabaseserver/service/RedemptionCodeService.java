@@ -35,4 +35,33 @@ public interface RedemptionCodeService extends IService<RedemptionCode> {
      */
     List<RedemptionCode> generateRedemptionCodes(Long productId, String batchNo, Integer count, 
                                                   java.time.LocalDateTime expireTime);
+
+    /**
+     * 为订单生成兑换码（支付成功后调用）
+     *
+     * @param orderId 订单ID
+     * @param userId 用户ID
+     * @param product 商品信息
+     * @param quantity 购买数量
+     * @return 兑换码列表
+     */
+    List<String> generateRedemptionCodesForOrder(Long orderId, Long userId, Product product, Integer quantity);
+
+    /**
+     * 兑换码兑换（用户输入兑换码）
+     *
+     * @param code 兑换码
+     * @param userId 用户ID
+     * @param addressId 地址ID（实物商品必填）
+     * @return 兑换结果
+     */
+    Boolean redeemCode(String code, Long userId, Long addressId);
+
+    /**
+     * 根据订单ID查询兑换码列表
+     *
+     * @param orderId 订单ID
+     * @return 兑换码列表
+     */
+    List<String> getRedemptionCodesByOrderId(Long orderId);
 }

@@ -1,6 +1,16 @@
 package com.rich.pandabaseserver.controller;
 
 import com.mybatisflex.core.paginate.Page;
+import com.rich.pandabaseserver.common.ResultUtils;
+import com.rich.pandabaseserver.common.response.BaseResponse;
+import com.rich.pandabaseserver.exception.ErrorCode;
+import com.rich.pandabaseserver.exception.ThrowUtils;
+import com.rich.pandabaseserver.model.entity.User;
+import com.rich.pandabaseserver.model.vo.MembershipCardVO;
+import com.rich.pandabaseserver.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,10 +31,14 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/membershipCard")
+@Tag(name = "会员卡管理", description = "会员卡相关接口")
 public class MembershipCardController {
 
     @Autowired
     private MembershipCardService membershipCardService;
+
+    @Autowired
+    private UserService userService;
 
     /**
      * 保存会员卡表。
@@ -89,6 +103,48 @@ public class MembershipCardController {
     @GetMapping("page")
     public Page<MembershipCard> page(Page<MembershipCard> page) {
         return membershipCardService.page(page);
+    }
+
+    /**
+     * 获取当前用户的会员卡列表
+     *
+     * @param request HTTP请求
+     * @return 会员卡列表
+     */
+    @GetMapping("/list/my")
+    @Operation(summary = "我的会员卡列表", description = "获取当前登录用户的所有会员卡")
+    public BaseResponse<List<MembershipCardVO>> getMyMembershipCards(HttpServletRequest request) {
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        List<MembershipCardVO> cards = membershipCardService.getUserMembershipCards(loginUser.getId());
+        return ResultUtils.success(cards);
+    }
+
+    /**
+     * 根据ID获取会员卡详情
+     *
+     * @param id 会员卡ID
+     * @param request HTTP请求
+     * @return 会员卡详情
+     */
+    @GetMapping("/get/vo/{id}")
+    @Operation(summary = "获取会员卡详情", description = "查看会员卡详细信息")
+    public BaseResponse<MembershipCardVO> getMembershipCardVOById(@PathVariable Long id,
+                                                                   HttpServletRequest request) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        MembershipCard card = membershipCardService.getById(id);
+        ThrowUtils.throwIf(card == null, ErrorCode.NOT_FOUND_ERROR, "会员卡不存在");
+        ThrowUtils.throwIf(!card.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限查看此会员卡");
+
+        MembershipCardVO cardVO = membershipCardService.getMembershipCardVO(card);
+        return ResultUtils.success(cardVO);
     }
 
 }

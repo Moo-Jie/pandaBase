@@ -18,7 +18,7 @@ public class UserQueryRequest extends PageRequest implements Serializable {
     /**
      * 用户昵称
      */
-    private String userName;
+    private String nickname;
 
     /**
      * 账号

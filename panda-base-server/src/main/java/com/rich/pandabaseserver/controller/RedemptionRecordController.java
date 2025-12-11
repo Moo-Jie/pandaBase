@@ -1,6 +1,16 @@
 package com.rich.pandabaseserver.controller;
 
 import com.mybatisflex.core.paginate.Page;
+import com.rich.pandabaseserver.common.ResultUtils;
+import com.rich.pandabaseserver.common.response.BaseResponse;
+import com.rich.pandabaseserver.exception.ErrorCode;
+import com.rich.pandabaseserver.exception.ThrowUtils;
+import com.rich.pandabaseserver.model.entity.User;
+import com.rich.pandabaseserver.model.vo.RedemptionRecordVO;
+import com.rich.pandabaseserver.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,10 +31,14 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/redemptionRecord")
+@Tag(name = "兑换记录管理", description = "兑换记录相关接口")
 public class RedemptionRecordController {
 
     @Autowired
     private RedemptionRecordService redemptionRecordService;
+
+    @Autowired
+    private UserService userService;
 
     /**
      * 保存兑换记录表。
@@ -89,6 +103,23 @@ public class RedemptionRecordController {
     @GetMapping("page")
     public Page<RedemptionRecord> page(Page<RedemptionRecord> page) {
         return redemptionRecordService.page(page);
+    }
+
+    /**
+     * 获取当前用户的兑换记录列表
+     *
+     * @param request HTTP请求
+     * @return 兑换记录列表
+     */
+    @GetMapping("/list/my")
+    @Operation(summary = "我的兑换记录列表", description = "获取当前登录用户的所有兑换记录")
+    public BaseResponse<List<RedemptionRecordVO>> getMyRedemptionRecords(HttpServletRequest request) {
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        List<RedemptionRecordVO> records = redemptionRecordService.getUserRedemptionRecords(loginUser.getId());
+        return ResultUtils.success(records);
     }
 
 }

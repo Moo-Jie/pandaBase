@@ -18,12 +18,12 @@ public class UserUpdateRequest implements Serializable {
     /**
      * 用户昵称
      */
-    private String userName;
+    private String nickname;
 
     /**
      * 用户头像
      */
-    private String userAvatar;
+    private String avatarUrl;
 
     /**
      * 简介

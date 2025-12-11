@@ -62,4 +62,13 @@ public interface PurchaseOrderService extends IService<PurchaseOrder> {
      * 订单过期自动取消（定时任务调用）
      */
     void autoExpireOrders();
+
+    /**
+     * 检查用户是否购买过指定商品
+     *
+     * @param userId 用户ID
+     * @param productId 商品ID
+     * @return 是否已购买
+     */
+    Boolean checkUserPurchased(Long userId, Long productId);
 }

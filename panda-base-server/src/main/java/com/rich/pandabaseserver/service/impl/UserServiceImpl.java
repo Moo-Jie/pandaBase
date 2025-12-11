@@ -225,7 +225,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 查询条件
         Long id = userQueryRequest.getId();
         String account = StrUtil.trimToNull(userQueryRequest.getAccount());
-        String userName = StrUtil.trimToNull(userQueryRequest.getUserName());
+        String nickname = StrUtil.trimToNull(userQueryRequest.getNickname());
         String userProfile = StrUtil.trimToNull(userQueryRequest.getUserProfile());
         String userRole = StrUtil.trimToNull(userQueryRequest.getUserRole());
         String sortField = StrUtil.trimToNull(userQueryRequest.getSortField());
@@ -243,8 +243,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (account != null) {
             queryWrapper.like("account", account);
         }
-        if (userName != null) {
-            queryWrapper.like("userName", userName);
+        if (nickname != null) {
+            queryWrapper.like("nickname", nickname);
         }
         if (userProfile != null) {
             queryWrapper.like("userProfile", userProfile);

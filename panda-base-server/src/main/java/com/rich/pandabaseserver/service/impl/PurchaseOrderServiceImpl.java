@@ -182,24 +182,20 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
         boolean updateResult = this.updateById(order);
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新订单状态失败");
 
-        // 9. 如果是虚拟票证（年卡、月卡、次票），自动派发兑换码和会员卡
-        List<String> cardNumbers = new ArrayList<>();
-        if (ProductTypeEnum.isVirtualTicket(product.getType())) {
-            // 派发兑换码和会员卡
-            cardNumbers = redemptionCodeService.dispatchForOrder(orderId, userId, product, firstItem.getQuantity());
-        } else {
-            // 实物商品，TODO：调用发货服务
-            log.info("实物商品订单支付成功，订单ID：{}，等待发货", orderId);
-        }
+        // 9. 无论虚拟商品还是实物商品，都生成兑换码
+        List<String> redemptionCodes = new ArrayList<>();
+        redemptionCodes = redemptionCodeService.generateRedemptionCodesForOrder(orderId, userId, product, firstItem.getQuantity());
+        
+        log.info("订单支付成功，已生成兑换码，订单ID：{}，兑换码数量：{}", orderId, redemptionCodes.size());
 
         // 10. 构建支付结果
         PaymentResultVO result = new PaymentResultVO();
         result.setOrderId(orderId);
         result.setOrderNo(order.getOrderNo());
         result.setSuccess(true);
-        result.setMessage("支付成功");
+        result.setMessage("支付成功，请前往个人中心-礼品兑换进行兑换");
         result.setTransactionId(transactionId);
-        result.setCardNumbers(cardNumbers);
+        result.setCardNumbers(redemptionCodes);
 
         log.info("支付订单成功，订单号：{}，用户ID：{}", order.getOrderNo(), userId);
         return result;
@@ -300,6 +296,12 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
             orderVO.setOrderItems(itemVOList);
         }
 
+        // 查询兑换码列表（只有已支付的订单才有兑换码）
+        if (OrderStatusEnum.PAID.getValue().equals(purchaseOrder.getOrderStatus())) {
+            List<String> redemptionCodes = redemptionCodeService.getRedemptionCodesByOrderId(purchaseOrder.getId());
+            orderVO.setRedemptionCodes(redemptionCodes);
+        }
+
         return orderVO;
     }
 
@@ -336,6 +338,36 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
         String timestamp = String.valueOf(System.currentTimeMillis());
         String random = IdUtil.randomUUID().substring(0, 6).toUpperCase();
         return "ORDER" + timestamp + random;
+    }
+
+    @Override
+    public Boolean checkUserPurchased(Long userId, Long productId) {
+        // 参数校验
+        ThrowUtils.throwIf(userId == null || productId == null, ErrorCode.PARAMS_ERROR);
+
+        // 查询用户是否有该商品的已支付订单
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .where("user_id = ?", userId)
+                .and("order_status = ?", OrderStatusEnum.PAID.getValue());
+
+        List<PurchaseOrder> orders = this.list(queryWrapper);
+        if (orders == null || orders.isEmpty()) {
+            return false;
+        }
+
+        // 检查订单明细中是否包含该商品
+        for (PurchaseOrder order : orders) {
+            List<OrderItem> orderItems = orderItemService.listByOrderId(order.getId());
+            if (orderItems != null) {
+                for (OrderItem item : orderItems) {
+                    if (item.getProductId().equals(productId)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
