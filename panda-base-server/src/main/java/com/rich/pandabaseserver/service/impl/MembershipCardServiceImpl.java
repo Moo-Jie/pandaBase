@@ -11,6 +11,7 @@ import com.rich.pandabaseserver.model.entity.Product;
 import com.rich.pandabaseserver.model.vo.MembershipCardVO;
 import com.rich.pandabaseserver.service.MembershipCardService;
 import com.rich.pandabaseserver.service.ProductService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +25,7 @@ import java.util.List;
  *
  * @author @author DuRuiChi
  */
+@Slf4j
 @Service
 public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper, MembershipCard> implements MembershipCardService {
 
@@ -128,5 +130,111 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
             case 3 -> "已作废";
             default -> "未知";
         };
+    }
+
+    @Override
+    public Boolean verifyCard(Long cardId, Long userId) {
+        ThrowUtils.throwIf(cardId == null || userId == null, ErrorCode.PARAMS_ERROR);
+
+        // 1. 查询会员卡
+        MembershipCard card = this.getById(cardId);
+        ThrowUtils.throwIf(card == null, ErrorCode.NOT_FOUND_ERROR, "会员卡不存在");
+        ThrowUtils.throwIf(!card.getUserId().equals(userId), ErrorCode.NO_AUTH_ERROR, "无权限使用此会员卡");
+
+        // 2. 检查会员卡状态
+        if (card.getStatus() == null || !card.getStatus().equals(1)) {
+            throw new com.rich.pandabaseserver.exception.BusinessException(ErrorCode.OPERATION_ERROR, "会员卡未激活或已失效");
+        }
+
+        // 3. 检查是否过期
+        LocalDateTime now = LocalDateTime.now();
+        if (card.getEndTime() != null && now.isAfter(card.getEndTime())) {
+            // 自动设置为过期状态
+            card.setStatus(2);
+            card.setUpdateTime(now);
+            this.updateById(card);
+            throw new com.rich.pandabaseserver.exception.BusinessException(ErrorCode.OPERATION_ERROR, "会员卡已过期");
+        }
+
+        // 4. 次票需要检查次数
+        if (card.getCardType() != null && card.getCardType() == 3) {
+            Integer totalCount = card.getTotalCount() != null ? card.getTotalCount() : 0;
+            Integer usedCount = card.getUsedCount() != null ? card.getUsedCount() : 0;
+
+            if (usedCount >= totalCount) {
+                throw new com.rich.pandabaseserver.exception.BusinessException(ErrorCode.OPERATION_ERROR, "次票使用次数已用完");
+            }
+
+            // 增加使用次数
+            card.setUsedCount(usedCount + 1);
+            card.setUpdateTime(now);
+            boolean updateResult = this.updateById(card);
+            ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "核销失败");
+
+            return true;
+        }
+
+        // 5. 年卡/月卡直接返回成功（只需要有效期内即可）
+        return true;
+    }
+
+    @Override
+    public Boolean checkCardAvailable(Long cardId, Long userId) {
+        ThrowUtils.throwIf(cardId == null || userId == null, ErrorCode.PARAMS_ERROR);
+
+        MembershipCard card = this.getById(cardId);
+        if (card == null || !card.getUserId().equals(userId)) {
+            return false;
+        }
+
+        // 检查状态
+        if (card.getStatus() == null || !card.getStatus().equals(1)) {
+            return false;
+        }
+
+        // 检查过期时间
+        LocalDateTime now = LocalDateTime.now();
+        if (card.getEndTime() != null && now.isAfter(card.getEndTime())) {
+            return false;
+        }
+
+        // 次票检查次数
+        if (card.getCardType() != null && card.getCardType() == 3) {
+            Integer totalCount = card.getTotalCount() != null ? card.getTotalCount() : 0;
+            Integer usedCount = card.getUsedCount() != null ? card.getUsedCount() : 0;
+            return usedCount < totalCount;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void autoExpireCards() {
+        // 查询所有已激活但已过期的会员卡
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .where("status = ?", 1)
+                .and("end_time < ?", LocalDateTime.now());
+
+        List<MembershipCard> expiredCards = this.list(queryWrapper);
+
+        if (expiredCards == null || expiredCards.isEmpty()) {
+            log.info("没有需要处理的过期会员卡");
+            return;
+        }
+
+        log.info("开始处理过期会员卡，共{}张", expiredCards.size());
+
+        // 批量更新为过期状态
+        for (MembershipCard card : expiredCards) {
+            card.setStatus(2);
+            card.setUpdateTime(LocalDateTime.now());
+        }
+
+        boolean updateResult = this.updateBatch(expiredCards);
+        if (updateResult) {
+            log.info("过期会员卡处理完成，共更新{}张", expiredCards.size());
+        } else {
+            log.error("过期会员卡批量更新失败");
+        }
     }
 }

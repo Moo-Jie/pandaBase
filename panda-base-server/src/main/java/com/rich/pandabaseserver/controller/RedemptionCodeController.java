@@ -5,6 +5,7 @@ import com.rich.pandabaseserver.common.ResultUtils;
 import com.rich.pandabaseserver.common.response.BaseResponse;
 import com.rich.pandabaseserver.exception.ErrorCode;
 import com.rich.pandabaseserver.exception.ThrowUtils;
+import com.rich.pandabaseserver.model.dto.redemption.BatchGenerateRequest;
 import com.rich.pandabaseserver.model.dto.redemption.RedeemRequest;
 import com.rich.pandabaseserver.model.entity.User;
 import com.rich.pandabaseserver.service.UserService;
@@ -132,6 +133,43 @@ public class RedemptionCodeController {
         );
 
         return ResultUtils.success(result);
+    }
+
+    /**
+     * 批量生成兑换码（管理员操作）
+     *
+     * @param request 批量生成请求
+     * @return 生成的兑换码列表
+     */
+    @PostMapping("/batch/generate")
+    @Operation(summary = "批量生成兑换码", description = "管理员批量生成指定商品的兑换码")
+    public BaseResponse<List<String>> batchGenerateRedemptionCodes(@RequestBody BatchGenerateRequest request) {
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(request.getProductId() == null, ErrorCode.PARAMS_ERROR, "商品ID不能为空");
+        ThrowUtils.throwIf(request.getCount() == null || request.getCount() <= 0, 
+                ErrorCode.PARAMS_ERROR, "生成数量必须大于0");
+        ThrowUtils.throwIf(request.getCount() > 1000, ErrorCode.PARAMS_ERROR, "单次生成数量不能超过1000");
+        ThrowUtils.throwIf(request.getExpireTime() == null, ErrorCode.PARAMS_ERROR, "过期时间不能为空");
+
+        // 如果没有提供批次号，自动生成
+        String batchNo = request.getBatchNo();
+        if (batchNo == null || batchNo.trim().isEmpty()) {
+            batchNo = "BATCH" + System.currentTimeMillis();
+        }
+
+        List<RedemptionCode> codes = redemptionCodeService.generateRedemptionCodes(
+                request.getProductId(), 
+                batchNo, 
+                request.getCount(), 
+                request.getExpireTime()
+        );
+
+        // 提取兑换码字符串列表
+        List<String> codeStrings = codes.stream()
+                .map(RedemptionCode::getCode)
+                .toList();
+
+        return ResultUtils.success(codeStrings);
     }
 
 }

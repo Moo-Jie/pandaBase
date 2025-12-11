@@ -14,27 +14,43 @@
 
 /* 颜色变量 */
 
+/* 熊猫主题色系 - 白色、灰色、淡绿色 */
+$panda-primary: #90d26c; // 淡绿色（主色）
+$panda-primary-light: #a8e063; // 浅绿色
+$panda-primary-dark: #56ab2f; // 深绿色
+$panda-white: #ffffff; // 纯白色
+$panda-gray-light: #f5f5f5; // 浅灰色背景
+$panda-gray: #999999; // 中灰色
+$panda-gray-dark: #666666; // 深灰色
+$panda-text: #333333; // 主文字色
+$panda-text-secondary: #666666; // 次要文字色
+$panda-text-placeholder: #999999; // 占位文字色
+$panda-border: #e0e0e0; // 边框色
+$panda-success: #90d26c; // 成功色（绿色）
+$panda-warning: #f5a623; // 警告色（淡黄）
+$panda-error: #f56c6c; // 错误色（淡红）
+
 /* 行为相关颜色 */
-$uni-color-primary: #007aff;
-$uni-color-success: #4cd964;
-$uni-color-warning: #f0ad4e;
-$uni-color-error: #dd524d;
+$uni-color-primary: $panda-primary;
+$uni-color-success: $panda-success;
+$uni-color-warning: $panda-warning;
+$uni-color-error: $panda-error;
 
 /* 文字基本颜色 */
-$uni-text-color:#333;//基本色
-$uni-text-color-inverse:#fff;//反色
-$uni-text-color-grey:#999;//辅助灰色，如加载更多的提示信息
-$uni-text-color-placeholder: #808080;
-$uni-text-color-disable:#c0c0c0;
+$uni-text-color: $panda-text; // 基本色
+$uni-text-color-inverse: $panda-white; // 反色
+$uni-text-color-grey: $panda-gray; // 辅助灰色
+$uni-text-color-placeholder: $panda-text-placeholder;
+$uni-text-color-disable: #cccccc;
 
 /* 背景颜色 */
-$uni-bg-color:#ffffff;
-$uni-bg-color-grey:#f8f8f8;
-$uni-bg-color-hover:#f1f1f1;//点击状态颜色
-$uni-bg-color-mask:rgba(0, 0, 0, 0.4);//遮罩颜色
+$uni-bg-color: $panda-white;
+$uni-bg-color-grey: $panda-gray-light;
+$uni-bg-color-hover: #f0f0f0; // 点击状态颜色
+$uni-bg-color-mask: rgba(0, 0, 0, 0.4); // 遮罩颜色
 
 /* 边框颜色 */
-$uni-border-color:#c8c7cc;
+$uni-border-color: $panda-border;
 
 /* 尺寸变量 */
 

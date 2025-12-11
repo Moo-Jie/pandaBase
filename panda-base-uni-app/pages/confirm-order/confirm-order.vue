@@ -1,9 +1,39 @@
 <template>
 	<view class="page">
 		<view class="container">
+			<!-- 收货地址 -->
+			<view class="address-section">
+				<view class="section-title">
+					<text class="title-icon">📍</text>
+					<text>收货地址</text>
+				</view>
+				
+				<!-- 已选择地址 -->
+				<view class="selected-address" v-if="selectedAddress" @click="handleSelectAddress">
+					<view class="address-content">
+						<view class="address-header">
+							<text class="receiver-name">{{ selectedAddress.receiverName }}</text>
+							<text class="receiver-phone">{{ selectedAddress.phone }}</text>
+						</view>
+						<text class="address-detail">{{ selectedAddress.fullAddress }}</text>
+					</view>
+					<text class="arrow">›</text>
+				</view>
+				
+				<!-- 未选择地址 -->
+				<view class="no-address" v-else @click="handleSelectAddress">
+					<text class="no-address-icon">📍</text>
+					<text class="no-address-text">请选择收货地址</text>
+					<text class="arrow">›</text>
+				</view>
+			</view>
+			
 			<!-- 商品信息 -->
 			<view class="product-section">
-				<view class="section-title">商品信息</view>
+				<view class="section-title">
+					<text class="title-icon">🎁</text>
+					<text>商品信息</text>
+				</view>
 				<view class="product-item">
 					<image class="product-img" :src="product.imageUrl || '/static/logo.png'" mode="aspectFill"></image>
 					<view class="product-info">
@@ -16,38 +46,25 @@
 				</view>
 			</view>
 			
-			<!-- 收货地址 -->
-			<view class="address-section">
-				<view class="section-title">收货地址</view>
-				<view class="address-form">
-					<view class="form-item">
-						<text class="label">收货人：</text>
-						<input class="input" v-model="address.name" placeholder="请输入收货人姓名" />
-					</view>
-					<view class="form-item">
-						<text class="label">联系电话：</text>
-						<input class="input" v-model="address.phone" placeholder="请输入联系电话" type="number" />
-					</view>
-					<view class="form-item">
-						<text class="label">详细地址：</text>
-						<textarea class="textarea" v-model="address.detail" placeholder="请输入详细地址" />
-					</view>
-				</view>
-			</view>
-			
 			<!-- 订单金额 -->
 			<view class="amount-section">
-				<view class="amount-row">
-					<text class="amount-label">商品金额：</text>
-					<text class="amount-value">¥{{ product.price }}</text>
+				<view class="section-title">
+					<text class="title-icon">💰</text>
+					<text>订单金额</text>
 				</view>
-				<view class="amount-row">
-					<text class="amount-label">数量：</text>
-					<text class="amount-value">{{ quantity }}</text>
-				</view>
-				<view class="amount-row total">
-					<text class="amount-label">合计：</text>
-					<text class="amount-value total-price">¥{{ totalPrice }}</text>
+				<view class="amount-list">
+					<view class="amount-row">
+						<text class="amount-label">商品金额</text>
+						<text class="amount-value">¥{{ product.price }}</text>
+					</view>
+					<view class="amount-row">
+						<text class="amount-label">数量</text>
+						<text class="amount-value">{{ quantity }}</text>
+					</view>
+					<view class="amount-row total">
+						<text class="amount-label">合计</text>
+						<text class="amount-value">¥{{ totalPrice }}</text>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -58,14 +75,15 @@
 				<text class="total-label">总计：</text>
 				<text class="total-amount">¥{{ totalPrice }}</text>
 			</view>
-			<button class="pay-button" @click="handlePay" :loading="paying">立即购买</button>
+			<button class="pay-button" @click="handlePay" :loading="paying" :disabled="paying" hover-class="button-hover">立即购买</button>
 		</view>
 	</view>
 </template>
 
 <script>
 import { getProductDetail } from '../../api/product.js';
-import { createOrder, payOrder } from '../../api/order.js';
+import { createOrder } from '../../api/order.js';
+import { getMyAddresses } from '../../api/address.js';
 
 export default {
 	data() {
@@ -73,17 +91,17 @@ export default {
 			productId: null,
 			product: {},
 			quantity: 1,
-			address: {
-				name: '',
-				phone: '',
-				detail: ''
-			},
+			selectedAddress: null,
 			paying: false
 		}
 	},
 	computed: {
 		totalPrice() {
 			return (this.product.price * this.quantity).toFixed(2);
+		},
+		needAddress() {
+			// 实物商品和组合商品需要地址
+			return this.product.type === 4 || this.product.type === 5;
 		}
 	},
 	onLoad(options) {
@@ -94,85 +112,94 @@ export default {
 		if (options.quantity) {
 			this.quantity = parseInt(options.quantity) || 1;
 		}
+		// 加载默认地址
+		this.loadDefaultAddress();
+	},
+	onShow() {
+		// 页面显示时重新查询默认地址
+		// 这样从地址管理页面返回时会刷新地址
+		if (this.needAddress) {
+			this.loadDefaultAddress();
+		}
 	},
 	methods: {
 		// 加载商品详情
 		async loadProductDetail() {
 			try {
-				uni.showLoading({
-					title: '加载中...'
-				});
-				
+				uni.showLoading({ title: '加载中...', mask: true });
 				const result = await getProductDetail(this.productId);
 				this.product = result || {};
-				
 				uni.hideLoading();
 			} catch (error) {
 				uni.hideLoading();
 				console.error('加载商品详情失败:', error);
+				uni.showToast({ title: '加载失败', icon: 'none' });
 			}
 		},
 		
-		// 验证地址
-		validateAddress() {
-			if (!this.address.name) {
-				uni.showToast({
-					title: '请输入收货人姓名',
-					icon: 'none'
-				});
-				return false;
+		// 加载默认地址
+		async loadDefaultAddress() {
+			try {
+				const addresses = await getMyAddresses();
+				if (addresses && addresses.length > 0) {
+					// 查找默认地址
+					const defaultAddress = addresses.find(addr => addr.isDefault);
+					// 如果有默认地址就使用默认地址，否则使用第一个地址
+					this.selectedAddress = defaultAddress || addresses[0];
+				}
+			} catch (error) {
+				console.error('加载地址失败:', error);
 			}
-			if (!this.address.phone) {
-				uni.showToast({
-					title: '请输入联系电话',
-					icon: 'none'
-				});
-				return false;
-			}
-			if (!/^1[3-9]\d{9}$/.test(this.address.phone)) {
-				uni.showToast({
-					title: '请输入正确的手机号',
-					icon: 'none'
-				});
-				return false;
-			}
-			if (!this.address.detail) {
-				uni.showToast({
-					title: '请输入详细地址',
-					icon: 'none'
-				});
-				return false;
-			}
-			return true;
+		},
+		
+		// 选择地址
+		handleSelectAddress() {
+			uni.navigateTo({
+				url: '/pages/address-list/address-list?select=true'
+			});
 		},
 		
 		// 处理购买（创建订单）
 		async handlePay() {
-			// 虚拟商品可以不填地址
-			const isVirtual = this.product.type === 1 || this.product.type === 2 || this.product.type === 3;
-			
-			if (!isVirtual && !this.validateAddress()) {
+			// 实物商品和组合商品必须选择地址
+			if (this.needAddress && !this.selectedAddress) {
+				uni.showModal({
+					title: '提示',
+					content: '请先选择收货地址',
+					confirmText: '去选择',
+					success: (res) => {
+						if (res.confirm) {
+							this.handleSelectAddress();
+						}
+					}
+				});
 				return;
 			}
 			
+			if (this.paying) return;
 			this.paying = true;
 			
 			try {
-				// 创建订单
-				uni.showLoading({
-					title: '创建订单...'
-				});
+				uni.showLoading({ title: '创建订单...', mask: true });
 				
-				const orderId = await createOrder({
+				// 构建订单数据
+				const orderData = {
 					productId: this.productId,
 					quantity: this.quantity
-				});
+				};
+				
+				// 如果是实物商品或组合商品，添加地址ID
+				if (this.needAddress && this.selectedAddress) {
+					orderData.addressId = this.selectedAddress.id;
+				}
+				
+				const orderId = await createOrder(orderData);
 				
 				uni.hideLoading();
 				
 				// 跳转到支付详情页
 				uni.redirectTo({
-					url: `/pages/payment/payment?orderId=${orderId}&orderNo=${encodeURIComponent('待获取')}&productName=${encodeURIComponent(this.product.name)}&quantity=${this.quantity}&payAmount=${this.totalPrice}&addressId=${this.addressId || ''}`
+					url: `/pages/payment/payment?orderId=${orderId}&orderNo=${encodeURIComponent('待获取')}&productName=${encodeURIComponent(this.product.name)}&quantity=${this.quantity}&payAmount=${this.totalPrice}&addressId=${this.selectedAddress?.id || ''}`
 				});
 				
 			} catch (error) {
@@ -180,8 +207,7 @@ export default {
 				console.error('创建订单失败:', error);
 				uni.showToast({
 					title: error.message || '创建订单失败',
-					icon: 'none',
-					duration: 2000
+					icon: 'none'
 				});
 			} finally {
 				this.paying = false;
@@ -191,11 +217,11 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page {
 	min-height: 100vh;
-	background-color: #f8f8f8;
-	padding-bottom: 120rpx;
+	background-color: #f5f5f5;
+	padding-bottom: 140rpx;
 }
 
 .container {
@@ -203,7 +229,9 @@ export default {
 }
 
 .section-title {
-	font-size: 32rpx;
+	display: flex;
+	align-items: center;
+	font-size: 28rpx;
 	font-weight: bold;
 	color: #333333;
 	padding: 20rpx 30rpx;
@@ -211,10 +239,87 @@ export default {
 	border-bottom: 1rpx solid #f0f0f0;
 }
 
+.title-icon {
+	font-size: 28rpx;
+	margin-right: 8rpx;
+}
+
+/* 收货地址 */
+.address-section {
+	background-color: #ffffff;
+	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.selected-address {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 30rpx;
+}
+
+.address-content {
+	flex: 1;
+	margin-right: 20rpx;
+}
+
+.address-header {
+	display: flex;
+	align-items: center;
+	gap: 20rpx;
+	margin-bottom: 12rpx;
+}
+
+.receiver-name {
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #333333;
+}
+
+.receiver-phone {
+	font-size: 26rpx;
+	color: #666666;
+}
+
+.address-detail {
+	font-size: 26rpx;
+	color: #666666;
+	line-height: 1.6;
+}
+
+.arrow {
+	font-size: 40rpx;
+	color: #cccccc;
+}
+
+.no-address {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 40rpx 30rpx;
+	background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+	border: 2rpx dashed #f5a623;
+	margin: 20rpx;
+	border-radius: 12rpx;
+}
+
+.no-address-icon {
+	font-size: 40rpx;
+	margin-right: 12rpx;
+}
+
+.no-address-text {
+	flex: 1;
+	font-size: 28rpx;
+	color: #f5a623;
+	font-weight: 500;
+}
+
 /* 商品信息 */
 .product-section {
 	background-color: #ffffff;
 	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .product-item {
@@ -228,6 +333,7 @@ export default {
 	height: 150rpx;
 	border-radius: 12rpx;
 	margin-right: 20rpx;
+	background-color: #f5f5f5;
 }
 
 .product-info {
@@ -237,18 +343,14 @@ export default {
 .product-name {
 	font-size: 28rpx;
 	color: #333333;
+	font-weight: 500;
 	margin-bottom: 16rpx;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	-webkit-box-orient: vertical;
 }
 
 .product-price {
 	font-size: 32rpx;
 	font-weight: bold;
-	color: #ff4444;
+	color: #90d26c;
 }
 
 .product-quantity {
@@ -256,53 +358,14 @@ export default {
 	color: #666666;
 }
 
-/* 收货地址 */
-.address-section {
-	background-color: #ffffff;
-	margin-bottom: 20rpx;
-}
-
-.address-form {
-	padding: 20rpx 30rpx;
-}
-
-.form-item {
-	display: flex;
-	align-items: flex-start;
-	margin-bottom: 30rpx;
-}
-
-.label {
-	width: 160rpx;
-	font-size: 28rpx;
-	color: #333333;
-	line-height: 60rpx;
-}
-
-.input {
-	flex: 1;
-	height: 60rpx;
-	font-size: 28rpx;
-	color: #333333;
-	background-color: #f8f8f8;
-	border-radius: 8rpx;
-	padding: 0 20rpx;
-}
-
-.textarea {
-	flex: 1;
-	min-height: 120rpx;
-	font-size: 28rpx;
-	color: #333333;
-	background-color: #f8f8f8;
-	border-radius: 8rpx;
-	padding: 15rpx 20rpx;
-}
-
 /* 订单金额 */
 .amount-section {
 	background-color: #ffffff;
-	padding: 30rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.amount-list {
+	padding: 20rpx 30rpx;
 }
 
 .amount-row {
@@ -310,10 +373,14 @@ export default {
 	justify-content: space-between;
 	align-items: center;
 	margin-bottom: 20rpx;
+	padding: 12rpx 0;
+}
+
+.amount-row:last-child {
+	margin-bottom: 0;
 }
 
 .amount-row.total {
-	margin-top: 20rpx;
 	padding-top: 20rpx;
 	border-top: 1rpx solid #f0f0f0;
 }
@@ -326,12 +393,19 @@ export default {
 .amount-value {
 	font-size: 28rpx;
 	color: #333333;
+	font-weight: 500;
 }
 
-.total-price {
+.amount-row.total .amount-label {
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #333333;
+}
+
+.amount-row.total .amount-value {
 	font-size: 36rpx;
 	font-weight: bold;
-	color: #ff4444;
+	color: #90d26c;
 }
 
 /* 底部按钮 */
@@ -362,7 +436,7 @@ export default {
 .total-amount {
 	font-size: 36rpx;
 	font-weight: bold;
-	color: #ff4444;
+	color: #90d26c;
 }
 
 .pay-button {
@@ -378,8 +452,15 @@ export default {
 	padding: 0;
 }
 
+.pay-button[disabled] {
+	opacity: 0.6;
+}
+
 .pay-button::after {
 	border: none;
 }
-</style>
 
+.button-hover {
+	opacity: 0.85;
+}
+</style>

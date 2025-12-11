@@ -10,9 +10,9 @@ import java.lang.annotation.Target;
 public @interface AuthCheck {
 
     /**
-     * 必须有某个角色
+     * 必须有某个角色 1-普通用户 2-管理员 3-超级管理员
      *
-     * @return String
+     * @return Integer
      */
-    String mustRole() default "";
+    int mustRole() default 0;
 }

@@ -28,4 +28,21 @@ public interface RedemptionRecordService extends IService<RedemptionRecord> {
      * @return 兑换记录VO
      */
     RedemptionRecordVO getRedemptionRecordVO(RedemptionRecord record);
+
+    /**
+     * 更新兑换记录发货信息
+     *
+     * @param recordId 兑换记录ID
+     * @param trackingNumber 物流单号
+     * @return 是否成功
+     */
+    Boolean shipRecord(Long recordId, String trackingNumber);
+
+    /**
+     * 完成兑换记录
+     *
+     * @param recordId 兑换记录ID
+     * @return 是否成功
+     */
+    Boolean completeRecord(Long recordId);
 }

@@ -186,7 +186,7 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
         try {
             // 批次号：ORDER + 订单ID
             String batchNo = "ORDER" + orderId;
-            
+
             // 过期时间：默认1年
             LocalDateTime expireTime = LocalDateTime.now().plusYears(1);
 
@@ -232,7 +232,7 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
         // 2. 查询兑换码
         com.mybatisflex.core.query.QueryWrapper queryWrapper = com.mybatisflex.core.query.QueryWrapper.create()
                 .where("code = ?", code);
-        
+
         RedemptionCode redemptionCode = this.getOne(queryWrapper);
         ThrowUtils.throwIf(redemptionCode == null, ErrorCode.NOT_FOUND_ERROR, "兑换码不存在，请确认来源");
 
@@ -267,7 +267,7 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
         redemptionCode.setUseTime(LocalDateTime.now());
         redemptionCode.setUseUserId(userId);
         redemptionCode.setUpdateTime(LocalDateTime.now());
-        
+
         boolean updateResult = this.updateById(redemptionCode);
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "兑换失败，请稍后重试");
 
@@ -288,9 +288,26 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
         boolean saveRecordResult = redemptionRecordService.save(record);
         ThrowUtils.throwIf(!saveRecordResult, ErrorCode.OPERATION_ERROR, "创建兑换记录失败");
 
-        // 9. 如果是虚拟商品，创建会员卡并关联兑换记录
+        // 9. 如果是虚拟商品，检查会员卡状态并处理
         if (ProductTypeEnum.isVirtualTicket(product.getType())) {
-            // 虚拟票证：生成会员卡
+            // 查询用户是否已有任何类型的有效会员卡（年卡/月卡/次票）
+            com.mybatisflex.core.query.QueryWrapper anyCardQuery = com.mybatisflex.core.query.QueryWrapper.create()
+                    .where("user_id = ?", userId)
+                    .and("card_type IN (1, 2, 3)") // 年卡、月卡、次票
+                    .and("status = ?", MembershipCardStatusEnum.ACTIVE.getValue())
+                    .and("end_time > ?", LocalDateTime.now());
+
+            MembershipCard anyExistingCard = membershipCardService.getOne(anyCardQuery);
+
+            if (anyExistingCard != null) {
+                // 已有任何类型的有效会员卡，不允许兑换
+                String cardTypeName = getCardTypeName(anyExistingCard.getCardType());
+                String expireDate = anyExistingCard.getEndTime().toLocalDate().toString();
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, 
+                        String.format("您已拥有有效的%s（有效期至%s），请等待过期后再兑换新卡", cardTypeName, expireDate));
+            }
+
+            // 没有任何有效会员卡，可以兑换，创建新卡
             String cardNumber = generateCardNumber(product.getType());
             LocalDateTime startTime = LocalDateTime.now();
             LocalDateTime endTime = calculateEndTime(startTime, product.getValidityDays());
@@ -312,8 +329,8 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
 
             boolean saveResult = membershipCardService.save(card);
             ThrowUtils.throwIf(!saveResult, ErrorCode.OPERATION_ERROR, "生成会员卡失败");
-            
-            log.info("虚拟商品兑换成功，生成会员卡：{}，关联兑换记录：{}", cardNumber, recordNo);
+
+            log.info("虚拟商品兑换成功，生成新会员卡：{}，关联兑换记录：{}", cardNumber, recordNo);
         } else {
             log.info("实物商品兑换成功，等待发货，兑换记录号：{}", recordNo);
         }
@@ -329,20 +346,35 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
         return SecureUtil.md5(code);
     }
 
+    /**
+     * 获取卡类型名称
+     */
+    private String getCardTypeName(Integer cardType) {
+        if (cardType == null) {
+            return "会员卡";
+        }
+        return switch (cardType) {
+            case 1 -> "年卡";
+            case 2 -> "月卡";
+            case 3 -> "次票";
+            default -> "会员卡";
+        };
+    }
+
     @Override
     public List<String> getRedemptionCodesByOrderId(Long orderId) {
         ThrowUtils.throwIf(orderId == null, ErrorCode.PARAMS_ERROR);
-        
+
         // 根据批次号查询兑换码
         String batchNo = "ORDER" + orderId;
         com.mybatisflex.core.query.QueryWrapper queryWrapper = com.mybatisflex.core.query.QueryWrapper.create()
                 .where("batch_no = ?", batchNo);
-        
+
         List<RedemptionCode> codeList = this.list(queryWrapper);
         if (codeList == null || codeList.isEmpty()) {
             return new ArrayList<>();
         }
-        
+
         // 返回兑换码字符串列表
         return codeList.stream()
                 .map(RedemptionCode::getCode)

@@ -59,8 +59,7 @@
 		
 		<!-- 底部购买按钮 -->
 		<view class="bottom-bar">
-			<button class="buy-button" @click="handleBuy" v-if="!isPurchased">立即购买</button>
-			<button class="purchased-button" disabled v-else>已购买</button>
+			<button class="buy-button" @click="handleBuy" hover-class="button-hover">立即购买</button>
 		</view>
 	</view>
 </template>
@@ -74,15 +73,13 @@ export default {
 	data() {
 		return {
 			productId: null,
-			product: {},
-			isPurchased: false
+			product: {}
 		}
 	},
 	onLoad(options) {
 		if (options.id) {
 			this.productId = options.id;
 			this.loadProductDetail();
-			this.checkPurchaseStatus();
 		}
 	},
 	methods: {
@@ -107,22 +104,6 @@ export default {
 			}
 		},
 		
-		// 检查购买状态
-		async checkPurchaseStatus() {
-			if (!isLoggedIn()) {
-				this.isPurchased = false;
-				return;
-			}
-			
-			try {
-				// 调用检查购买状态接口
-				const purchased = await checkPurchased(this.productId);
-				this.isPurchased = purchased || false;
-			} catch (error) {
-				console.error('检查购买状态失败:', error);
-				this.isPurchased = false;
-			}
-		},
 		
 		// 获取商品类型名称
 		getProductType(type) {
@@ -288,20 +269,12 @@ export default {
 	box-shadow: 0 4rpx 12rpx rgba(144, 210, 108, 0.4);
 }
 
-.purchased-button {
-	width: 100%;
-	height: 88rpx;
-	background-color: #e0e0e0;
-	border-radius: 44rpx;
-	font-size: 32rpx;
-	font-weight: bold;
-	color: #999999;
+.buy-button::after {
 	border: none;
 }
 
-.buy-button::after,
-.purchased-button::after {
-	border: none;
+.button-hover {
+	opacity: 0.85;
 }
 </style>
 

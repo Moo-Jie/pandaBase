@@ -38,6 +38,54 @@ public class PurchaseOrderVO implements Serializable {
     private Long userId;
 
     /**
+     * 收货地址ID
+     */
+    @Schema(description = "收货地址ID")
+    private Long addressId;
+
+    /**
+     * 收货人姓名
+     */
+    @Schema(description = "收货人姓名")
+    private String receiverName;
+
+    /**
+     * 收货人手机号
+     */
+    @Schema(description = "收货人手机号")
+    private String receiverPhone;
+
+    /**
+     * 省份
+     */
+    @Schema(description = "省份")
+    private String province;
+
+    /**
+     * 城市
+     */
+    @Schema(description = "城市")
+    private String city;
+
+    /**
+     * 区县
+     */
+    @Schema(description = "区县")
+    private String district;
+
+    /**
+     * 详细地址
+     */
+    @Schema(description = "详细地址")
+    private String detailAddress;
+
+    /**
+     * 完整地址（拼接后的）
+     */
+    @Schema(description = "完整地址")
+    private String fullAddress;
+
+    /**
      * 订单总金额
      */
     @Schema(description = "订单总金额")

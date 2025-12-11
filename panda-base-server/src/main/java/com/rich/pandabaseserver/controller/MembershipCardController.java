@@ -147,4 +147,45 @@ public class MembershipCardController {
         return ResultUtils.success(cardVO);
     }
 
+    /**
+     * 核销会员卡
+     *
+     * @param id 会员卡ID
+     * @param request HTTP请求
+     * @return 核销结果
+     */
+    @PostMapping("/verify/{id}")
+    @Operation(summary = "核销会员卡", description = "使用会员卡入园，次票会减少次数")
+    public BaseResponse<Boolean> verifyCard(@PathVariable Long id,
+                                            HttpServletRequest request) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        Boolean result = membershipCardService.verifyCard(id, loginUser.getId());
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 检查会员卡是否可用
+     *
+     * @param id 会员卡ID
+     * @param request HTTP请求
+     * @return 是否可用
+     */
+    @GetMapping("/check/{id}")
+    @Operation(summary = "检查会员卡可用性", description = "检查会员卡是否有效且可使用")
+    public BaseResponse<Boolean> checkCardAvailable(@PathVariable Long id,
+                                                    HttpServletRequest request) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        Boolean result = membershipCardService.checkCardAvailable(id, loginUser.getId());
+        return ResultUtils.success(result);
+    }
 }

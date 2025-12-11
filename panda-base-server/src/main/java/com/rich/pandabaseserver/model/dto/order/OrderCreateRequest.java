@@ -19,14 +19,20 @@ public class OrderCreateRequest implements Serializable {
     /**
      * 商品ID
      */
-    @Schema(description = "商品ID", required = true)
+    @Schema(description = "商品ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long productId;
 
     /**
      * 购买数量
      */
-    @Schema(description = "购买数量", required = true)
+    @Schema(description = "购买数量", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer quantity;
+
+    /**
+     * 收货地址ID（实物商品和组合商品必填）
+     */
+    @Schema(description = "收货地址ID")
+    private Long addressId;
 
     /**
      * 用户ID（从登录态获取，前端不传）

@@ -122,4 +122,37 @@ public class RedemptionRecordController {
         return ResultUtils.success(records);
     }
 
+    /**
+     * 发货（管理员操作）
+     *
+     * @param recordId 兑换记录ID
+     * @param trackingNumber 物流单号
+     * @return 是否成功
+     */
+    @PostMapping("/ship")
+    @Operation(summary = "发货", description = "管理员为兑换记录填写物流单号并发货")
+    public BaseResponse<Boolean> shipRecord(@org.springframework.web.bind.annotation.RequestParam Long recordId,
+                                            @org.springframework.web.bind.annotation.RequestParam String trackingNumber) {
+        ThrowUtils.throwIf(recordId == null || trackingNumber == null || trackingNumber.trim().isEmpty(), 
+                ErrorCode.PARAMS_ERROR);
+
+        Boolean result = redemptionRecordService.shipRecord(recordId, trackingNumber);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 完成兑换记录（管理员操作）
+     *
+     * @param recordId 兑换记录ID
+     * @return 是否成功
+     */
+    @PostMapping("/complete/{recordId}")
+    @Operation(summary = "完成兑换记录", description = "管理员确认用户已收货，完成兑换记录")
+    public BaseResponse<Boolean> completeRecord(@PathVariable Long recordId) {
+        ThrowUtils.throwIf(recordId == null, ErrorCode.PARAMS_ERROR);
+
+        Boolean result = redemptionRecordService.completeRecord(recordId);
+        return ResultUtils.success(result);
+    }
+
 }

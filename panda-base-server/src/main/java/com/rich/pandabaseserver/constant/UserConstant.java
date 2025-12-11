@@ -16,14 +16,19 @@ public interface UserConstant {
     //  region 权限
 
     /**
-     * 默认角色
+     * 默认角色 - 普通用户
      */
-    String DEFAULT_ROLE = "user";
+    int DEFAULT_ROLE = 1;
 
     /**
      * 管理员角色
      */
-    String ADMIN_ROLE = "admin";
+    int ADMIN_ROLE = 2;
+
+    /**
+     * 超级管理员角色
+     */
+    int SUPER_ADMIN_ROLE = 3;
     
     // endregion
 }

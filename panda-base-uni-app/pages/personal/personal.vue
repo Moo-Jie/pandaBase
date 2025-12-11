@@ -6,11 +6,11 @@
 				<image class="avatar" :src="userInfo.avatarUrl || '/static/logo.png'" mode="aspectFill"></image>
 				<view class="info">
 					<text class="nickname">{{ userInfo.nickname || '熊猫爱好者' }}</text>
-					<text class="account">账号：{{ userInfo.account }}</text>
+					<text class="account">账号：{{ userInfo.account || '未设置' }}</text>
 				</view>
 			</view>
 			<view class="login-prompt" v-else @click="goLogin">
-				<image class="avatar" src="/static/logo.png" mode="aspectFill"></image>
+				<view class="panda-icon">🐼</view>
 				<view class="info">
 					<text class="login-text">点击登录</text>
 					<text class="login-tip">登录后查看更多功能</text>
@@ -21,12 +21,13 @@
 		
 		<!-- 会员卡片区 -->
 		<view class="card-section" v-if="isLoggedIn">
-			<view class="membership-card">
+			<view class="membership-card" :class="membershipStatus !== '暂无会员' ? 'has-membership' : ''">
 				<view class="card-header">
+					<view class="card-icon">💳</view>
 					<text class="card-title">我的会员</text>
-					<text class="card-status">{{ membershipStatus }}</text>
 				</view>
 				<view class="card-body">
+					<text class="card-status">{{ membershipStatus }}</text>
 					<text class="card-desc">{{ membershipDesc }}</text>
 				</view>
 			</view>
@@ -37,23 +38,23 @@
 			<view class="menu-group">
 				<text class="group-title">我的服务</text>
 				<view class="menu-list">
-					<view class="menu-item" @click="handleMenuClick('orders')">
+					<view class="menu-item" @click="handleMenuClick('orders')" hover-class="menu-hover">
 						<view class="menu-left">
-							<view class="menu-icon order-icon">📋</view>
+							<text class="menu-emoji">📋</text>
 							<text class="menu-title">购买订单</text>
 						</view>
 						<text class="menu-arrow">›</text>
 					</view>
-					<view class="menu-item" @click="handleMenuClick('redemption')">
+					<view class="menu-item" @click="handleMenuClick('redemption')" hover-class="menu-hover">
 						<view class="menu-left">
-							<view class="menu-icon redeem-icon">🎁</view>
+							<text class="menu-emoji">🎁</text>
 							<text class="menu-title">兑换记录</text>
 						</view>
 						<text class="menu-arrow">›</text>
 					</view>
-					<view class="menu-item" @click="handleMenuClick('cards')">
+					<view class="menu-item" @click="handleMenuClick('cards')" hover-class="menu-hover">
 						<view class="menu-left">
-							<view class="menu-icon card-icon">💳</view>
+							<text class="menu-emoji">💳</text>
 							<text class="menu-title">我的会员卡</text>
 						</view>
 						<text class="menu-arrow">›</text>
@@ -64,16 +65,23 @@
 			<view class="menu-group">
 				<text class="group-title">其他服务</text>
 				<view class="menu-list">
-					<view class="menu-item" @click="handleMenuClick('exchange')">
+					<view class="menu-item" @click="handleMenuClick('address')" hover-class="menu-hover">
 						<view class="menu-left">
-							<view class="menu-icon exchange-icon">🔄</view>
+							<text class="menu-emoji">📍</text>
+							<text class="menu-title">地址管理</text>
+						</view>
+						<text class="menu-arrow">›</text>
+					</view>
+					<view class="menu-item" @click="handleMenuClick('exchange')" hover-class="menu-hover">
+						<view class="menu-left">
+							<text class="menu-emoji">🔄</text>
 							<text class="menu-title">礼品兑换</text>
 						</view>
 						<text class="menu-arrow">›</text>
 					</view>
-					<view class="menu-item" @click="handleMenuClick('service')">
+					<view class="menu-item" @click="handleMenuClick('service')" hover-class="menu-hover">
 						<view class="menu-left">
-							<view class="menu-icon service-icon">💬</view>
+							<text class="menu-emoji">💬</text>
 							<text class="menu-title">联系客服</text>
 						</view>
 						<text class="menu-arrow">›</text>
@@ -84,7 +92,7 @@
 		
 		<!-- 退出登录按钮 -->
 		<view class="logout-section" v-if="isLoggedIn">
-			<button class="logout-btn" @click="handleLogout">退出登录</button>
+			<button class="logout-btn" @click="handleLogout" hover-class="button-hover">退出登录</button>
 		</view>
 	</view>
 </template>
@@ -198,13 +206,16 @@ export default {
 		// 处理菜单点击
 		handleMenuClick(type) {
 			if (!this.isLoggedIn) {
-				uni.showToast({
-					title: '请先登录',
-					icon: 'none'
+				uni.showModal({
+					title: '提示',
+					content: '请先登录后使用',
+					confirmText: '去登录',
+					success: (res) => {
+						if (res.confirm) {
+							this.goLogin();
+						}
+					}
 				});
-				setTimeout(() => {
-					this.goLogin();
-				}, 1500);
 				return;
 			}
 			
@@ -222,6 +233,11 @@ export default {
 				case 'cards':
 					uni.navigateTo({
 						url: '/pages/my-cards/my-cards'
+					});
+					break;
+				case 'address':
+					uni.navigateTo({
+						url: '/pages/address-list/address-list'
 					});
 					break;
 				case 'exchange':
@@ -250,6 +266,8 @@ export default {
 							clearUserInfo();
 							this.isLoggedIn = false;
 							this.userInfo = {};
+							this.membershipStatus = '暂无会员';
+							this.membershipDesc = '购买年卡或月卡，尊享会员权益';
 							uni.showToast({
 								title: '已退出登录',
 								icon: 'success'
@@ -269,7 +287,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page {
 	min-height: 100vh;
 	background-color: #f5f5f5;
@@ -289,9 +307,14 @@ export default {
 .login-prompt {
 	display: flex;
 	align-items: center;
-	padding: 20rpx;
+	padding: 24rpx;
 	background: rgba(255, 255, 255, 0.2);
-	border-radius: 16rpx;
+	border-radius: 20rpx;
+}
+
+.panda-icon {
+	font-size: 80rpx;
+	margin-right: 20rpx;
 }
 
 .avatar {
@@ -300,6 +323,7 @@ export default {
 	border-radius: 60rpx;
 	border: 4rpx solid rgba(255, 255, 255, 0.5);
 	margin-right: 24rpx;
+	background-color: #ffffff;
 }
 
 .info {
@@ -317,7 +341,7 @@ export default {
 .account {
 	display: block;
 	font-size: 26rpx;
-	color: rgba(255, 255, 255, 0.8);
+	color: rgba(255, 255, 255, 0.85);
 }
 
 .login-text {
@@ -331,7 +355,7 @@ export default {
 .login-tip {
 	display: block;
 	font-size: 24rpx;
-	color: rgba(255, 255, 255, 0.8);
+	color: rgba(255, 255, 255, 0.85);
 }
 
 .arrow {
@@ -347,47 +371,58 @@ export default {
 }
 
 .membership-card {
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: #ffffff;
 	border-radius: 20rpx;
 	padding: 30rpx;
-	box-shadow: 0 8rpx 16rpx rgba(102, 126, 234, 0.3);
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+	border: 2rpx solid #e0e0e0;
+}
+
+.membership-card.has-membership {
+	border-color: #90d26c;
+	background: linear-gradient(135deg, #ffffff 0%, #f0f9f0 100%);
 }
 
 .card-header {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
 	margin-bottom: 20rpx;
 }
 
-.card-title {
-	font-size: 32rpx;
-	font-weight: bold;
-	color: #ffffff;
+.card-icon {
+	font-size: 36rpx;
+	margin-right: 12rpx;
 }
 
-.card-status {
-	font-size: 24rpx;
-	color: rgba(255, 255, 255, 0.8);
-	padding: 8rpx 16rpx;
-	background: rgba(255, 255, 255, 0.2);
-	border-radius: 20rpx;
+.card-title {
+	font-size: 28rpx;
+	font-weight: bold;
+	color: #333333;
 }
 
 .card-body {
 	padding-top: 20rpx;
-	border-top: 1rpx solid rgba(255, 255, 255, 0.2);
+	border-top: 1rpx solid #f0f0f0;
+}
+
+.card-status {
+	display: block;
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #90d26c;
+	margin-bottom: 12rpx;
 }
 
 .card-desc {
-	font-size: 28rpx;
-	color: rgba(255, 255, 255, 0.9);
+	display: block;
+	font-size: 24rpx;
+	color: #666666;
 	line-height: 1.6;
 }
 
 /* 菜单区 */
 .menu-section {
-	padding: 30rpx;
+	padding: 0 30rpx 30rpx;
 }
 
 .menu-group {
@@ -396,7 +431,7 @@ export default {
 
 .group-title {
 	display: block;
-	font-size: 28rpx;
+	font-size: 26rpx;
 	color: #999999;
 	margin-bottom: 20rpx;
 	padding-left: 10rpx;
@@ -406,6 +441,7 @@ export default {
 	background-color: #ffffff;
 	border-radius: 16rpx;
 	overflow: hidden;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .menu-item {
@@ -414,10 +450,15 @@ export default {
 	align-items: center;
 	padding: 30rpx 24rpx;
 	border-bottom: 1rpx solid #f0f0f0;
+	transition: background-color 0.3s;
 }
 
 .menu-item:last-child {
 	border-bottom: none;
+}
+
+.menu-hover {
+	background-color: #f5f5f5;
 }
 
 .menu-left {
@@ -426,35 +467,9 @@ export default {
 	flex: 1;
 }
 
-.menu-icon {
-	width: 72rpx;
-	height: 72rpx;
-	border-radius: 16rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 36rpx;
+.menu-emoji {
+	font-size: 40rpx;
 	margin-right: 20rpx;
-}
-
-.order-icon {
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.redeem-icon {
-	background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.card-icon {
-	background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.exchange-icon {
-	background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.service-icon {
-	background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 }
 
 .menu-title {
@@ -471,7 +486,7 @@ export default {
 
 /* 退出登录 */
 .logout-section {
-	padding: 30rpx;
+	padding: 0 30rpx 40rpx;
 }
 
 .logout-btn {
@@ -488,5 +503,8 @@ export default {
 .logout-btn::after {
 	border: none;
 }
-</style>
 
+.button-hover {
+	background-color: #f5f5f5;
+}
+</style>

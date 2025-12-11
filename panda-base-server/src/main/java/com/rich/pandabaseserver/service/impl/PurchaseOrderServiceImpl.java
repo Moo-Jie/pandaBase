@@ -67,27 +67,45 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
         Long userId = orderCreateRequest.getUserId();
         Long productId = orderCreateRequest.getProductId();
         Integer quantity = orderCreateRequest.getQuantity();
+        Long addressId = orderCreateRequest.getAddressId();
 
         // 2. 查询商品信息
         Product product = productService.getById(productId);
         ThrowUtils.throwIf(product == null, ErrorCode.NOT_FOUND_ERROR, "商品不存在");
         ThrowUtils.throwIf(product.getStatus() != 1, ErrorCode.OPERATION_ERROR, "商品已下架");
 
-        // 3. 检查库存
+        // 3. 验证地址（实物商品和组合商品必须有地址）
+        Integer productType = product.getType();
+        boolean needAddress = (productType == ProductTypeEnum.PHYSICAL_GOODS.getValue() 
+                || productType == ProductTypeEnum.COMBO.getValue());
+        
+        UserAddress address = null;
+        if (needAddress) {
+            // 实物商品或组合商品必须提供地址
+            ThrowUtils.throwIf(addressId == null, ErrorCode.PARAMS_ERROR, "请选择收货地址");
+            
+            // 查询并验证地址
+            address = userAddressService.getById(addressId);
+            ThrowUtils.throwIf(address == null, ErrorCode.NOT_FOUND_ERROR, "收货地址不存在");
+            ThrowUtils.throwIf(!address.getUserId().equals(userId), 
+                    ErrorCode.NO_AUTH_ERROR, "无权使用此地址");
+        }
+
+        // 4. 检查库存
         if (product.getStock() < quantity) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "库存不足");
         }
 
-        // 4. 计算金额
+        // 5. 计算金额
         BigDecimal price = product.getPrice();
         BigDecimal totalAmount = price.multiply(BigDecimal.valueOf(quantity));
         BigDecimal payAmount = totalAmount; // 暂无优惠
 
-        // 5. 生成订单编号
+        // 6. 生成订单编号
         String orderNo = generateOrderNo();
 
-        // 6. 创建订单
-        PurchaseOrder order = PurchaseOrder.builder()
+        // 7. 创建订单（包含地址信息）
+        PurchaseOrder.PurchaseOrderBuilder orderBuilder = PurchaseOrder.builder()
                 .orderNo(orderNo)
                 .userId(userId)
                 .totalAmount(totalAmount)
@@ -95,13 +113,25 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
                 .orderStatus(OrderStatusEnum.PENDING.getValue())
                 .expireTime(LocalDateTime.now().plusMinutes(CommonConstant.ORDER_EXPIRE_MINUTES))
                 .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
-                .build();
-
+                .updateTime(LocalDateTime.now());
+        
+        // 如果需要地址，保存地址信息到订单中（冗余存储，防止用户删除地址）
+        if (needAddress && address != null) {
+            orderBuilder
+                    .addressId(address.getId())
+                    .receiverName(address.getReceiverName())
+                    .receiverPhone(address.getPhone())
+                    .province(address.getProvince())
+                    .city(address.getCity())
+                    .district(address.getDistrict())
+                    .detailAddress(address.getDetailAddress());
+        }
+        
+        PurchaseOrder order = orderBuilder.build();
         boolean saveResult = this.save(order);
         ThrowUtils.throwIf(!saveResult, ErrorCode.OPERATION_ERROR, "创建订单失败");
 
-        // 7. 创建订单明细
+        // 8. 创建订单明细
         OrderItem orderItem = OrderItem.builder()
                 .orderId(order.getId())
                 .productId(productId)
@@ -116,11 +146,12 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
         boolean saveItemResult = orderItemService.save(orderItem);
         ThrowUtils.throwIf(!saveItemResult, ErrorCode.OPERATION_ERROR, "创建订单明细失败");
 
-        // 8. 扣减库存
+        // 9. 扣减库存
         boolean updateStockResult = productService.updateStock(productId, -quantity);
         ThrowUtils.throwIf(!updateStockResult, ErrorCode.OPERATION_ERROR, "扣减库存失败");
 
-        log.info("创建订单成功，订单号：{}，用户ID：{}，商品ID：{}", orderNo, userId, productId);
+        log.info("创建订单成功，订单号：{}，用户ID：{}，商品ID：{}，需要地址：{}", 
+                orderNo, userId, productId, needAddress);
         return order.getId();
     }
 
@@ -171,7 +202,8 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
                     ErrorCode.PARAMS_ERROR, "收货地址无效");
         }
 
-        // 7. 调用微信支付（TODO：这里暂时模拟支付成功）
+        // 7. 调用微信支付
+        // TODO：模拟支付成功，有微信公众平台应用ID和商户号后再实现具体逻辑
         String transactionId = mockWeChatPay(order);
 
         // 8. 更新订单状态为已支付
@@ -285,6 +317,15 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
             orderVO.setOrderStatusText(statusEnum.getText());
         }
 
+        // 拼接完整地址
+        if (purchaseOrder.getProvince() != null) {
+            String fullAddress = (purchaseOrder.getProvince() != null ? purchaseOrder.getProvince() : "") +
+                    (purchaseOrder.getCity() != null ? purchaseOrder.getCity() : "") +
+                    (purchaseOrder.getDistrict() != null ? purchaseOrder.getDistrict() : "") +
+                    (purchaseOrder.getDetailAddress() != null ? purchaseOrder.getDetailAddress() : "");
+            orderVO.setFullAddress(fullAddress);
+        }
+
         // 查询订单明细
         List<OrderItem> orderItems = orderItemService.listByOrderId(purchaseOrder.getId());
         if (orderItems != null && !orderItems.isEmpty()) {
@@ -316,18 +357,26 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
         List<PurchaseOrder> expiredOrders = this.list(queryWrapper);
         
         if (expiredOrders == null || expiredOrders.isEmpty()) {
+            log.info("没有需要处理的过期订单");
             return;
         }
 
         log.info("开始自动取消过期订单，共{}个", expiredOrders.size());
         
+        int successCount = 0;
+        int failCount = 0;
+        
         for (PurchaseOrder order : expiredOrders) {
             try {
                 this.cancelOrder(order.getId(), order.getUserId(), "订单已过期，系统自动取消");
+                successCount++;
             } catch (Exception e) {
-                log.error("自动取消订单失败，订单号：{}", order.getOrderNo(), e);
+                failCount++;
+                log.error("自动取消订单失败，订单号：{}，错误：{}", order.getOrderNo(), e.getMessage(), e);
             }
         }
+        
+        log.info("过期订单处理完成，成功：{}个，失败：{}个", successCount, failCount);
     }
 
     /**

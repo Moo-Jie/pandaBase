@@ -1,10 +1,17 @@
 <template>
 	<view class="page">
+		<!-- 背景装饰 -->
+		<view class="bg-decoration">
+			<view class="bamboo-left">🎋</view>
+			<view class="bamboo-right">🎋</view>
+		</view>
+		
 		<view class="container">
 			<!-- Logo -->
 			<view class="logo-section">
-				<image class="logo" src="/static/logo.png" mode="aspectFit"></image>
+				<view class="panda-icon">🐼</view>
 				<text class="app-name">熊猫基地</text>
+				<text class="app-slogan">欢迎进入熊猫的世界</text>
 			</view>
 			
 			<!-- 切换标签 -->
@@ -21,45 +28,90 @@
 			<view class="form-section" v-if="currentTab === 'login'">
 				<view class="form-item">
 					<view class="form-label">
-						<text class="icon">👤</text>
-						<text>账号</text>
+						<text class="icon">📱</text>
+						<text>手机号</text>
 					</view>
-					<input class="form-input" v-model="loginForm.account" placeholder="请输入账号" />
+					<input 
+						class="form-input" 
+						v-model="loginForm.phone" 
+						type="number"
+						maxlength="11"
+						placeholder="请输入手机号"
+						placeholder-class="placeholder"
+					/>
 				</view>
 				<view class="form-item">
 					<view class="form-label">
 						<text class="icon">🔒</text>
 						<text>密码</text>
 					</view>
-					<input class="form-input" v-model="loginForm.password" type="password" placeholder="请输入密码" />
+					<input 
+						class="form-input" 
+						v-model="loginForm.password" 
+						type="password" 
+						placeholder="请输入密码"
+						placeholder-class="placeholder"
+					/>
 				</view>
-				<button class="submit-btn" @click="handleLogin" :loading="loading">登录</button>
+				<button class="submit-btn" @click="handleLogin" :loading="loading" :disabled="loading" hover-class="button-hover">登录</button>
 			</view>
 			
 			<!-- 注册表单 -->
 			<view class="form-section" v-if="currentTab === 'register'">
 				<view class="form-item">
 					<view class="form-label">
-						<text class="icon">👤</text>
-						<text>账号</text>
+						<text class="icon">📱</text>
+						<text>手机号</text>
 					</view>
-					<input class="form-input" v-model="registerForm.account" placeholder="请输入账号" />
+					<input 
+						class="form-input" 
+						v-model="registerForm.phone" 
+						type="number"
+						maxlength="11"
+						placeholder="请输入手机号"
+						placeholder-class="placeholder"
+					/>
+				</view>
+				<view class="form-item">
+					<view class="form-label">
+						<text class="icon">😊</text>
+						<text>昵称</text>
+					</view>
+					<input 
+						class="form-input" 
+						v-model="registerForm.nickname" 
+						maxlength="20"
+						placeholder="请输入昵称（最多20字）"
+						placeholder-class="placeholder"
+					/>
 				</view>
 				<view class="form-item">
 					<view class="form-label">
 						<text class="icon">🔒</text>
 						<text>密码</text>
 					</view>
-					<input class="form-input" v-model="registerForm.password" type="password" placeholder="请输入密码（至少6位）" />
+					<input 
+						class="form-input" 
+						v-model="registerForm.password" 
+						type="password" 
+						placeholder="请输入密码（至少6位）"
+						placeholder-class="placeholder"
+					/>
 				</view>
 				<view class="form-item">
 					<view class="form-label">
 						<text class="icon">🔒</text>
 						<text>确认密码</text>
 					</view>
-					<input class="form-input" v-model="registerForm.checkPassword" type="password" placeholder="请再次输入密码" />
+					<input 
+						class="form-input" 
+						v-model="registerForm.checkPassword" 
+						type="password" 
+						placeholder="请再次输入密码"
+						placeholder-class="placeholder"
+					/>
 				</view>
-				<button class="submit-btn" @click="handleRegister" :loading="loading">注册</button>
+				<button class="submit-btn" @click="handleRegister" :loading="loading" :disabled="loading" hover-class="button-hover">注册</button>
 			</view>
 			
 			<!-- 提示文字 -->
@@ -79,11 +131,12 @@ export default {
 		return {
 			currentTab: 'login',
 			loginForm: {
-				account: '',
+				phone: '',
 				password: ''
 			},
 			registerForm: {
-				account: '',
+				phone: '',
+				nickname: '',
 				password: '',
 				checkPassword: ''
 			},
@@ -104,13 +157,23 @@ export default {
 		
 		// 处理登录
 		async handleLogin() {
-			if (!this.loginForm.account) {
+			// 验证手机号
+			if (!this.loginForm.phone) {
 				uni.showToast({
-					title: '请输入账号',
+					title: '请输入手机号',
 					icon: 'none'
 				});
 				return;
 			}
+			if (!/^1[3-9]\d{9}$/.test(this.loginForm.phone)) {
+				uni.showToast({
+					title: '手机号格式不正确',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			// 验证密码
 			if (!this.loginForm.password) {
 				uni.showToast({
 					title: '请输入密码',
@@ -119,17 +182,24 @@ export default {
 				return;
 			}
 			
+			if (this.loading) return;
 			this.loading = true;
 			
 			try {
+				uni.showLoading({
+					title: '登录中...',
+					mask: true
+				});
+				
 				const result = await login({
-					account: this.loginForm.account,
+					account: this.loginForm.phone, // 账号=手机号
 					password: this.loginForm.password
 				});
 				
 				// 保存用户信息
 				setUserInfo(result);
 				
+				uni.hideLoading();
 				uni.showToast({
 					title: '登录成功',
 					icon: 'success',
@@ -150,6 +220,7 @@ export default {
 				}, 1500);
 				
 			} catch (error) {
+				uni.hideLoading();
 				console.error('登录失败:', error);
 			} finally {
 				this.loading = false;
@@ -158,13 +229,32 @@ export default {
 		
 		// 处理注册
 		async handleRegister() {
-			if (!this.registerForm.account) {
+			// 验证手机号
+			if (!this.registerForm.phone) {
 				uni.showToast({
-					title: '请输入账号',
+					title: '请输入手机号',
 					icon: 'none'
 				});
 				return;
 			}
+			if (!/^1[3-9]\d{9}$/.test(this.registerForm.phone)) {
+				uni.showToast({
+					title: '手机号格式不正确',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			// 验证昵称
+			if (!this.registerForm.nickname) {
+				uni.showToast({
+					title: '请输入昵称',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			// 验证密码
 			if (!this.registerForm.password) {
 				uni.showToast({
 					title: '请输入密码',
@@ -187,33 +277,43 @@ export default {
 				return;
 			}
 			
+			if (this.loading) return;
 			this.loading = true;
 			
 			try {
+				uni.showLoading({
+					title: '注册中...',
+					mask: true
+				});
+				
 				await register({
-					account: this.registerForm.account,
+					phone: this.registerForm.phone,
+					nickname: this.registerForm.nickname,
 					password: this.registerForm.password,
 					checkPassword: this.registerForm.checkPassword
 				});
 				
+				uni.hideLoading();
 				uni.showToast({
 					title: '注册成功，请登录',
 					icon: 'success',
 					duration: 2000
 				});
 				
-				// 切换到登录标签，并填充账号
+				// 切换到登录标签，并填充手机号
 				setTimeout(() => {
 					this.currentTab = 'login';
-					this.loginForm.account = this.registerForm.account;
+					this.loginForm.phone = this.registerForm.phone;
 					this.registerForm = {
-						account: '',
+						phone: '',
+						nickname: '',
 						password: '',
 						checkPassword: ''
 					};
 				}, 2000);
 				
 			} catch (error) {
+				uni.hideLoading();
 				console.error('注册失败:', error);
 			} finally {
 				this.loading = false;
@@ -223,25 +323,55 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page {
 	min-height: 100vh;
-	background: linear-gradient(135deg, #e0f7e0 0%, #ffffff 100%);
+	background: linear-gradient(180deg, #f0f9f0 0%, #ffffff 100%);
+	position: relative;
+	overflow: hidden;
+}
+
+/* 背景装饰 */
+.bg-decoration {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+.bamboo-left {
+	position: absolute;
+	top: 20rpx;
+	left: -40rpx;
+	font-size: 200rpx;
+	opacity: 0.1;
+	transform: rotate(-15deg);
+}
+
+.bamboo-right {
+	position: absolute;
+	bottom: 20rpx;
+	right: -40rpx;
+	font-size: 200rpx;
+	opacity: 0.1;
+	transform: rotate(15deg);
 }
 
 .container {
+	position: relative;
+	z-index: 1;
 	padding: 80rpx 60rpx;
 }
 
+/* Logo区域 */
 .logo-section {
 	text-align: center;
 	margin-bottom: 80rpx;
 }
 
-.logo {
-	width: 160rpx;
-	height: 160rpx;
-	margin-bottom: 30rpx;
+.panda-icon {
+	font-size: 140rpx;
+	margin-bottom: 20rpx;
 }
 
 .app-name {
@@ -249,8 +379,16 @@ export default {
 	font-size: 48rpx;
 	font-weight: bold;
 	color: #333333;
+	margin-bottom: 12rpx;
 }
 
+.app-slogan {
+	display: block;
+	font-size: 26rpx;
+	color: #666666;
+}
+
+/* 标签切换 */
 .tab-section {
 	display: flex;
 	justify-content: center;
@@ -276,6 +414,7 @@ export default {
 .tab-text {
 	font-size: 30rpx;
 	color: #666666;
+	font-weight: 500;
 }
 
 .tab-item.active .tab-text {
@@ -283,6 +422,7 @@ export default {
 	font-weight: bold;
 }
 
+/* 表单区域 */
 .form-section {
 	margin-bottom: 40rpx;
 }
@@ -296,6 +436,7 @@ export default {
 	align-items: center;
 	font-size: 28rpx;
 	color: #333333;
+	font-weight: 500;
 	margin-bottom: 16rpx;
 }
 
@@ -308,11 +449,16 @@ export default {
 	width: 100%;
 	height: 88rpx;
 	background-color: #ffffff;
-	border-radius: 44rpx;
+	border-radius: 16rpx;
 	padding: 0 30rpx;
 	font-size: 28rpx;
 	color: #333333;
 	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	border: 2rpx solid #f0f0f0;
+}
+
+.placeholder {
+	color: #999999;
 }
 
 .submit-btn {
@@ -328,10 +474,20 @@ export default {
 	box-shadow: 0 4rpx 12rpx rgba(144, 210, 108, 0.4);
 }
 
+.submit-btn[disabled] {
+	opacity: 0.6;
+}
+
 .submit-btn::after {
 	border: none;
 }
 
+.button-hover {
+	opacity: 0.9;
+	transform: scale(0.98);
+}
+
+/* 提示区域 */
 .tip-section {
 	text-align: center;
 	margin-top: 40rpx;
@@ -340,6 +496,6 @@ export default {
 .tip-text {
 	font-size: 24rpx;
 	color: #999999;
+	line-height: 1.6;
 }
 </style>
-

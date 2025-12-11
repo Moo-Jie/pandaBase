@@ -2,7 +2,7 @@
 	<view class="page">
 		<view class="container" v-if="order.id">
 			<!-- 订单状态 -->
-			<view class="status-section">
+			<view class="status-section" :class="'status-' + order.orderStatus">
 				<view class="status-icon">{{ getStatusIcon(order.orderStatus) }}</view>
 				<text class="status-text">{{ order.orderStatusText }}</text>
 				<text class="status-tip" v-if="order.orderStatus === 0">请在{{ formatExpireTime(order.expireTime) }}前完成支付</text>
@@ -10,26 +10,29 @@
 			
 			<!-- 订单信息 -->
 			<view class="info-section">
-				<view class="section-title">订单信息</view>
+				<view class="section-title">
+					<text class="title-icon">📋</text>
+					<text>订单信息</text>
+				</view>
 				<view class="info-list">
 					<view class="info-item">
-						<text class="label">订单编号：</text>
+						<text class="label">订单编号</text>
 						<text class="value">{{ order.orderNo }}</text>
 					</view>
 					<view class="info-item">
-						<text class="label">创建时间：</text>
+						<text class="label">创建时间</text>
 						<text class="value">{{ formatDateTime(order.createTime) }}</text>
 					</view>
 					<view class="info-item" v-if="order.payTime">
-						<text class="label">支付时间：</text>
+						<text class="label">支付时间</text>
 						<text class="value">{{ formatDateTime(order.payTime) }}</text>
 					</view>
 					<view class="info-item" v-if="order.cancelTime">
-						<text class="label">取消时间：</text>
+						<text class="label">取消时间</text>
 						<text class="value">{{ formatDateTime(order.cancelTime) }}</text>
 					</view>
 					<view class="info-item" v-if="order.cancelReason">
-						<text class="label">取消原因：</text>
+						<text class="label">取消原因</text>
 						<text class="value">{{ order.cancelReason }}</text>
 					</view>
 				</view>
@@ -37,7 +40,10 @@
 			
 			<!-- 商品信息 -->
 			<view class="product-section">
-				<view class="section-title">商品信息</view>
+				<view class="section-title">
+					<text class="title-icon">🎁</text>
+					<text>商品信息</text>
+				</view>
 				<view class="product-list">
 					<view 
 						class="product-item" 
@@ -58,14 +64,17 @@
 			
 			<!-- 金额信息 -->
 			<view class="amount-section">
-				<view class="section-title">金额信息</view>
+				<view class="section-title">
+					<text class="title-icon">💰</text>
+					<text>金额信息</text>
+				</view>
 				<view class="amount-list">
 					<view class="amount-item">
-						<text class="label">商品总额：</text>
+						<text class="label">商品总额</text>
 						<text class="value">¥{{ order.totalAmount }}</text>
 					</view>
 					<view class="amount-item total">
-						<text class="label">实付款：</text>
+						<text class="label">实付款</text>
 						<text class="value">¥{{ order.payAmount }}</text>
 					</view>
 				</view>
@@ -73,7 +82,10 @@
 			
 			<!-- 兑换码信息 -->
 			<view class="redemption-section" v-if="order.orderStatus === 1 && order.redemptionCodes && order.redemptionCodes.length > 0">
-				<view class="section-title">兑换码信息</view>
+				<view class="section-title">
+					<text class="title-icon">🎫</text>
+					<text>兑换码信息</text>
+				</view>
 				<view class="redemption-list">
 					<view 
 						class="redemption-item" 
@@ -81,23 +93,24 @@
 						:key="index"
 					>
 						<view class="code-info">
-							<text class="code-label">兑换码 {{ index + 1 }}：</text>
+							<text class="code-label">兑换码 {{ index + 1 }}</text>
 							<text class="code-value">{{ code }}</text>
 						</view>
-						<button class="copy-btn" @click="handleCopyCode(code)">复制</button>
+						<button class="copy-btn" @click="handleCopyCode(code)" hover-class="button-hover">复制</button>
 					</view>
 				</view>
 				<view class="redemption-tip">
-					<text class="tip-text">💡 复制兑换码后可前往"个人中心-礼品兑换"进行兑换</text>
+					<text class="tip-icon">💡</text>
+					<text class="tip-text">复制兑换码后可前往"个人中心-礼品兑换"进行兑换</text>
 				</view>
-				<button class="goto-redeem-btn" @click="handleGotoRedeem">立即兑换</button>
+				<button class="goto-redeem-btn" @click="handleGotoRedeem" hover-class="button-hover">立即兑换</button>
 			</view>
 		</view>
 		
 		<!-- 底部操作栏 -->
 		<view class="bottom-bar" v-if="order.orderStatus === 0">
-			<button class="action-btn cancel-btn" @click="handleCancel">取消订单</button>
-			<button class="action-btn pay-btn" @click="handlePay">立即支付</button>
+			<button class="action-btn cancel-btn" @click="handleCancel" hover-class="button-hover">取消订单</button>
+			<button class="action-btn pay-btn" @click="handlePay" hover-class="button-hover">立即支付</button>
 		</view>
 	</view>
 </template>
@@ -123,7 +136,8 @@ export default {
 		async loadOrderDetail() {
 			try {
 				uni.showLoading({
-					title: '加载中...'
+					title: '加载中...',
+					mask: true
 				});
 				
 				const result = await getOrderDetail(this.orderId);
@@ -146,11 +160,11 @@ export default {
 				case 0:
 					return '⏰';
 				case 1:
-					return '✅';
+					return '✓'; // 简约的对勾
 				case 2:
-					return '❌';
+					return '×'; // 简约的叉号
 				default:
-					return '📦';
+					return '●';
 			}
 		},
 		
@@ -193,7 +207,9 @@ export default {
 				success: async (res) => {
 					if (res.confirm) {
 						try {
+							uni.showLoading({ title: '取消中...', mask: true });
 							await cancelOrderApi(this.orderId);
+							uni.hideLoading();
 							uni.showToast({
 								title: '订单已取消',
 								icon: 'success'
@@ -203,6 +219,7 @@ export default {
 								this.loadOrderDetail();
 							}, 1500);
 						} catch (error) {
+							uni.hideLoading();
 							console.error('取消订单失败:', error);
 						}
 					}
@@ -248,7 +265,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page {
 	min-height: 100vh;
 	background-color: #f5f5f5;
@@ -265,29 +282,67 @@ export default {
 	flex-direction: column;
 	align-items: center;
 	padding: 60rpx 30rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
 	margin-bottom: 20rpx;
 }
 
+.status-0 {
+	background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+}
+
+.status-1 {
+	background: linear-gradient(135deg, #f0f9f0 0%, #ffffff 100%);
+}
+
+.status-2 {
+	background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+}
+
 .status-icon {
-	font-size: 100rpx;
+	width: 120rpx;
+	height: 120rpx;
+	border-radius: 60rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 80rpx;
+	font-weight: bold;
 	margin-bottom: 20rpx;
+}
+
+.status-0 .status-icon {
+	background-color: #fff9e6;
+	color: #f5a623;
+	border: 4rpx solid #f5a623;
+}
+
+.status-1 .status-icon {
+	background-color: #f0f9f0;
+	color: #90d26c;
+	border: 4rpx solid #90d26c;
+}
+
+.status-2 .status-icon {
+	background-color: #f5f5f5;
+	color: #999999;
+	border: 4rpx solid #e0e0e0;
 }
 
 .status-text {
 	font-size: 36rpx;
 	font-weight: bold;
-	color: #ffffff;
+	color: #333333;
 	margin-bottom: 12rpx;
 }
 
 .status-tip {
 	font-size: 26rpx;
-	color: rgba(255, 255, 255, 0.9);
+	color: #666666;
 }
 
 /* 通用区块 */
 .section-title {
+	display: flex;
+	align-items: center;
 	font-size: 28rpx;
 	font-weight: bold;
 	color: #333333;
@@ -296,10 +351,16 @@ export default {
 	border-bottom: 1rpx solid #f0f0f0;
 }
 
+.title-icon {
+	font-size: 28rpx;
+	margin-right: 8rpx;
+}
+
 /* 订单信息 */
 .info-section {
 	background-color: #ffffff;
 	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .info-list {
@@ -311,6 +372,7 @@ export default {
 	justify-content: space-between;
 	align-items: flex-start;
 	margin-bottom: 20rpx;
+	padding: 16rpx 0;
 }
 
 .info-item:last-child {
@@ -319,7 +381,7 @@ export default {
 
 .info-item .label {
 	font-size: 28rpx;
-	color: #666666;
+	color: #999999;
 	flex-shrink: 0;
 }
 
@@ -328,12 +390,14 @@ export default {
 	color: #333333;
 	text-align: right;
 	word-break: break-all;
+	font-weight: 500;
 }
 
 /* 商品信息 */
 .product-section {
 	background-color: #ffffff;
 	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .product-list {
@@ -342,11 +406,7 @@ export default {
 
 .product-item {
 	display: flex;
-	margin-bottom: 20rpx;
-}
-
-.product-item:last-child {
-	margin-bottom: 0;
+	padding: 16rpx 0;
 }
 
 .product-img {
@@ -354,6 +414,7 @@ export default {
 	height: 150rpx;
 	border-radius: 12rpx;
 	margin-right: 20rpx;
+	background-color: #f5f5f5;
 }
 
 .product-info {
@@ -366,6 +427,7 @@ export default {
 .product-name {
 	font-size: 28rpx;
 	color: #333333;
+	font-weight: 500;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	display: -webkit-box;
@@ -377,12 +439,13 @@ export default {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	margin-top: 10rpx;
 }
 
 .product-price {
 	font-size: 32rpx;
 	font-weight: bold;
-	color: #ff4444;
+	color: #90d26c;
 }
 
 .product-qty {
@@ -394,6 +457,7 @@ export default {
 .amount-section {
 	background-color: #ffffff;
 	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .amount-list {
@@ -405,6 +469,7 @@ export default {
 	justify-content: space-between;
 	align-items: center;
 	margin-bottom: 20rpx;
+	padding: 12rpx 0;
 }
 
 .amount-item:last-child {
@@ -436,13 +501,14 @@ export default {
 .amount-item.total .value {
 	font-size: 36rpx;
 	font-weight: bold;
-	color: #ff4444;
+	color: #90d26c;
 }
 
 /* 兑换码信息 */
 .redemption-section {
 	background-color: #ffffff;
 	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .redemption-list {
@@ -454,7 +520,8 @@ export default {
 	justify-content: space-between;
 	align-items: center;
 	padding: 20rpx;
-	background-color: #f8f8f8;
+	background: linear-gradient(135deg, #f0f9f0 0%, #ffffff 100%);
+	border: 2rpx solid #90d26c;
 	border-radius: 12rpx;
 	margin-bottom: 16rpx;
 }
@@ -479,7 +546,8 @@ export default {
 .code-value {
 	font-size: 28rpx;
 	color: #333333;
-	font-family: monospace;
+	font-family: 'Courier New', monospace;
+	font-weight: bold;
 	word-break: break-all;
 }
 
@@ -500,22 +568,31 @@ export default {
 }
 
 .redemption-tip {
+	display: flex;
+	align-items: flex-start;
 	padding: 20rpx 30rpx;
 	background-color: #fff9e6;
 	margin: 0 30rpx 20rpx;
-	border-radius: 8rpx;
+	border-radius: 12rpx;
+	border-left: 4rpx solid #f5a623;
+}
+
+.tip-icon {
+	font-size: 24rpx;
+	margin-right: 8rpx;
 }
 
 .tip-text {
+	flex: 1;
 	font-size: 24rpx;
-	color: #ff9800;
+	color: #f5a623;
 	line-height: 1.6;
 }
 
 .goto-redeem-btn {
 	margin: 0 30rpx 20rpx;
 	height: 80rpx;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
 	color: #ffffff;
 	font-size: 30rpx;
 	font-weight: bold;
@@ -557,14 +634,17 @@ export default {
 }
 
 .cancel-btn {
-	background-color: #f5f5f5;
+	background-color: #ffffff;
 	color: #666666;
+	border: 2rpx solid #e0e0e0 !important;
 }
 
 .pay-btn {
 	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
 	color: #ffffff;
 }
+
+.button-hover {
+	opacity: 0.85;
+}
 </style>
-
-

@@ -43,7 +43,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final String DEFAULT_USER_NAME = "无名";
 
     /**
-     * 用户注册
+     * 用户注册（旧版，保留兼容）
      *
      * @param account   用户账号
      * @param password  用户密码
@@ -73,6 +73,82 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (!this.save(user)) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "用户注册失败");
         }
+        return user.getId();
+    }
+
+    /**
+     * 用户注册（手机号+昵称版）
+     *
+     * @param phone 手机号
+     * @param nickname 昵称
+     * @param password 密码
+     * @param checkPassword 确认密码
+     * @return 新注册用户的ID
+     */
+    @Override
+    public long userRegisterWithPhone(String phone, String nickname, String password, String checkPassword) {
+        // 1. 校验手机号
+        if (StrUtil.isBlank(phone)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号不能为空");
+        }
+        if (!phone.matches("^1[3-9]\\d{9}$")) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号格式不正确");
+        }
+
+        // 2. 校验昵称
+        if (StrUtil.isBlank(nickname)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "昵称不能为空");
+        }
+        if (nickname.length() > 20) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "昵称长度不能超过20个字符");
+        }
+
+        // 3. 校验密码
+        if (StrUtil.hasBlank(password, checkPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码不能为空");
+        }
+        if (password.length() < 6) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码长度至少为6位");
+        }
+        if (!password.equals(checkPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
+        }
+
+        // 4. 检查手机号唯一性
+        QueryWrapper phoneQuery = QueryWrapper.create()
+                .eq("phone", phone)
+                .select("id");
+        if (mapper.selectCountByQuery(phoneQuery) > 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号已被注册");
+        }
+
+        // 5. 检查账号唯一性（账号=手机号）
+        QueryWrapper accountQuery = QueryWrapper.create()
+                .eq("account", phone)
+                .select("id");
+        if (mapper.selectCountByQuery(accountQuery) > 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "该手机号已被注册");
+        }
+
+        // 6. 密码加密
+        String encryptPassword = encryptPassword(password);
+
+        // 7. 构建用户对象
+        User user = new User();
+        user.setAccount(phone); // 账号=手机号
+        user.setPhone(phone);
+        user.setNickname(nickname);
+        user.setPassword(encryptPassword);
+        user.setRole(UserRoleEnum.USER.getValue());
+        user.setIsAnonymous(false); // 非匿名用户
+        user.setStatus(true); // 正常状态
+        // 生成默认openid（后续接入微信登录时替换）
+        user.setOpenid("LOCAL_" + System.currentTimeMillis() + "_" + phone);
+
+        if (!this.save(user)) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "用户注册失败");
+        }
+
         return user.getId();
     }
 
@@ -227,7 +303,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String account = StrUtil.trimToNull(userQueryRequest.getAccount());
         String nickname = StrUtil.trimToNull(userQueryRequest.getNickname());
         String userProfile = StrUtil.trimToNull(userQueryRequest.getUserProfile());
-        String userRole = StrUtil.trimToNull(userQueryRequest.getUserRole());
+        Integer userRole = userQueryRequest.getUserRole();
         String sortField = StrUtil.trimToNull(userQueryRequest.getSortField());
         String sortOrder = StrUtil.trimToNull(userQueryRequest.getSortOrder());
 
@@ -237,7 +313,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             queryWrapper.eq("id", id);
         }
         if (userRole != null) {
-            queryWrapper.eq("userRole", userRole);
+            queryWrapper.eq("role", userRole);
         }
         // 模糊查询
         if (account != null) {

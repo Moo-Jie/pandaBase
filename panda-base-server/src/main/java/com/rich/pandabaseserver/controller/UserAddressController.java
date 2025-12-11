@@ -5,6 +5,7 @@ import com.rich.pandabaseserver.common.response.BaseResponse;
 import com.rich.pandabaseserver.exception.ErrorCode;
 import com.rich.pandabaseserver.exception.ThrowUtils;
 import com.rich.pandabaseserver.model.dto.address.UserAddressAddRequest;
+import com.rich.pandabaseserver.model.dto.address.UserAddressUpdateRequest;
 import com.rich.pandabaseserver.model.entity.User;
 import com.rich.pandabaseserver.model.vo.UserAddressVO;
 import com.rich.pandabaseserver.service.UserAddressService;
@@ -100,6 +101,46 @@ public class UserAddressController {
         addressVO.setFullAddress(fullAddress);
 
         return ResultUtils.success(addressVO);
+    }
+
+    /**
+     * 更新收货地址
+     *
+     * @param addressUpdateRequest 地址更新请求
+     * @param request HTTP请求
+     * @return 是否成功
+     */
+    @PostMapping("/update")
+    @Operation(summary = "更新收货地址", description = "用户更新收货地址")
+    public BaseResponse<Boolean> updateAddress(@RequestBody UserAddressUpdateRequest addressUpdateRequest,
+                                                HttpServletRequest request) {
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        Boolean result = userAddressService.updateAddress(addressUpdateRequest, loginUser.getId());
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 设置默认地址
+     *
+     * @param id 地址ID
+     * @param request HTTP请求
+     * @return 是否成功
+     */
+    @PostMapping("/setDefault/{id}")
+    @Operation(summary = "设置默认地址", description = "设置指定地址为默认地址")
+    public BaseResponse<Boolean> setDefaultAddress(@PathVariable Long id,
+                                                    HttpServletRequest request) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        Boolean result = userAddressService.setDefaultAddress(id, loginUser.getId());
+        return ResultUtils.success(result);
     }
 
     /**

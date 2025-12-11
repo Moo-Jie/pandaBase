@@ -13,9 +13,14 @@ public class UserRegisterRequest implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 账号
+     * 手机号（作为账号）
      */
-    private String account;
+    private String phone;
+
+    /**
+     * 昵称
+     */
+    private String nickname;
 
     /**
      * 密码
@@ -26,4 +31,9 @@ public class UserRegisterRequest implements Serializable {
      * 确认密码
      */
     private String checkPassword;
+
+    /**
+     * 账号（与手机号相同，兼容字段）
+     */
+    private String account;
 }

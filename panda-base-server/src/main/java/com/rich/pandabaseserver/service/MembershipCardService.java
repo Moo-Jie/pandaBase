@@ -28,4 +28,27 @@ public interface MembershipCardService extends IService<MembershipCard> {
      * @return 会员卡VO
      */
     MembershipCardVO getMembershipCardVO(MembershipCard membershipCard);
+
+    /**
+     * 核销会员卡（使用一次）
+     *
+     * @param cardId 会员卡ID
+     * @param userId 用户ID
+     * @return 是否成功
+     */
+    Boolean verifyCard(Long cardId, Long userId);
+
+    /**
+     * 检查会员卡是否有效且可用
+     *
+     * @param cardId 会员卡ID
+     * @param userId 用户ID
+     * @return 是否可用
+     */
+    Boolean checkCardAvailable(Long cardId, Long userId);
+
+    /**
+     * 自动处理过期会员卡
+     */
+    void autoExpireCards();
 }

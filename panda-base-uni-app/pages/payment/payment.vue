@@ -3,18 +3,21 @@
 		<view class="container">
 			<!-- 订单信息 -->
 			<view class="order-section">
-				<view class="section-title">订单信息</view>
+				<view class="section-title">
+					<text class="title-icon">📋</text>
+					<text>订单信息</text>
+				</view>
 				<view class="order-info">
 					<view class="info-row">
-						<text class="label">订单编号：</text>
+						<text class="label">订单编号</text>
 						<text class="value">{{ orderNo }}</text>
 					</view>
 					<view class="info-row">
-						<text class="label">商品名称：</text>
+						<text class="label">商品名称</text>
 						<text class="value">{{ productName }}</text>
 					</view>
 					<view class="info-row">
-						<text class="label">购买数量：</text>
+						<text class="label">购买数量</text>
 						<text class="value">{{ quantity }}</text>
 					</view>
 				</view>
@@ -23,23 +26,31 @@
 			<!-- 支付金额 -->
 			<view class="amount-section">
 				<view class="amount-label">支付金额</view>
-				<view class="amount-value">¥{{ payAmount }}</view>
+				<view class="amount-value">
+					<text class="currency">¥</text>
+					<text class="amount">{{ payAmount }}</text>
+				</view>
 			</view>
 			
 			<!-- 支付方式 -->
 			<view class="payment-method-section">
-				<view class="section-title">选择支付方式</view>
+				<view class="section-title">
+					<text class="title-icon">💳</text>
+					<text>支付方式</text>
+				</view>
 				<view class="payment-list">
 					<view class="payment-item selected">
 						<view class="payment-left">
-							<view class="payment-icon wechat-icon">💚</view>
+							<view class="wechat-icon">
+								<text class="wechat-text">微信</text>
+							</view>
 							<text class="payment-name">微信支付</text>
 						</view>
 						<view class="payment-check">✓</view>
 					</view>
 				</view>
 				<view class="payment-tip">
-					<text class="tip-text">*当前仅支持微信支付</text>
+					<text class="tip-text">* 当前仅支持微信支付</text>
 				</view>
 			</view>
 		</view>
@@ -50,7 +61,7 @@
 				<text class="total-label">合计：</text>
 				<text class="total-amount">¥{{ payAmount }}</text>
 			</view>
-			<button class="pay-button" @click="handlePay" :loading="paying">确认支付</button>
+			<button class="pay-button" @click="handlePay" :loading="paying" hover-class="button-hover">确认支付</button>
 		</view>
 	</view>
 </template>
@@ -101,11 +112,14 @@ export default {
 				return;
 			}
 			
+			if (this.paying) return; // 防止重复提交
+			
 			this.paying = true;
 			
 			try {
 				uni.showLoading({
-					title: '支付中...'
+					title: '支付中...',
+					mask: true
 				});
 				
 				// 调用支付接口
@@ -158,11 +172,11 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page {
 	min-height: 100vh;
 	background-color: #f5f5f5;
-	padding-bottom: 120rpx;
+	padding-bottom: 140rpx;
 }
 
 .container {
@@ -170,6 +184,8 @@ export default {
 }
 
 .section-title {
+	display: flex;
+	align-items: center;
 	font-size: 28rpx;
 	font-weight: bold;
 	color: #333333;
@@ -178,10 +194,16 @@ export default {
 	border-bottom: 1rpx solid #f0f0f0;
 }
 
+.title-icon {
+	font-size: 28rpx;
+	margin-right: 8rpx;
+}
+
 /* 订单信息 */
 .order-section {
 	background-color: #ffffff;
 	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .order-info {
@@ -193,6 +215,7 @@ export default {
 	justify-content: space-between;
 	align-items: center;
 	margin-bottom: 20rpx;
+	padding: 12rpx 0;
 }
 
 .info-row:last-child {
@@ -201,7 +224,7 @@ export default {
 
 .label {
 	font-size: 28rpx;
-	color: #666666;
+	color: #999999;
 }
 
 .value {
@@ -213,27 +236,43 @@ export default {
 /* 支付金额 */
 .amount-section {
 	background-color: #ffffff;
-	padding: 40rpx 30rpx;
+	padding: 50rpx 30rpx;
 	margin-bottom: 20rpx;
 	text-align: center;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .amount-label {
 	font-size: 28rpx;
 	color: #666666;
-	margin-bottom: 16rpx;
+	margin-bottom: 20rpx;
 }
 
 .amount-value {
-	font-size: 72rpx;
+	display: flex;
+	align-items: baseline;
+	justify-content: center;
+}
+
+.currency {
+	font-size: 40rpx;
 	font-weight: bold;
-	color: #ff4444;
+	color: #90d26c;
+	margin-right: 4rpx;
+}
+
+.amount {
+	font-size: 80rpx;
+	font-weight: bold;
+	color: #90d26c;
+	line-height: 1;
 }
 
 /* 支付方式 */
 .payment-method-section {
 	background-color: #ffffff;
 	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .payment-list {
@@ -244,14 +283,14 @@ export default {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 24rpx;
-	background-color: #f8f8f8;
+	padding: 24rpx 20rpx;
+	background-color: #f5f5f5;
 	border-radius: 12rpx;
-	border: 2rpx solid #f0f0f0;
+	border: 2rpx solid #e0e0e0;
 }
 
 .payment-item.selected {
-	background-color: #f0f9f0;
+	background: linear-gradient(135deg, #f0f9f0 0%, #ffffff 100%);
 	border-color: #90d26c;
 }
 
@@ -261,19 +300,21 @@ export default {
 	flex: 1;
 }
 
-.payment-icon {
+.wechat-icon {
 	width: 60rpx;
 	height: 60rpx;
+	background: linear-gradient(135deg, #09bb07 0%, #07c160 100%);
 	border-radius: 12rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 36rpx;
-	margin-right: 20rpx;
+	margin-right: 16rpx;
 }
 
-.wechat-icon {
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+.wechat-text {
+	font-size: 22rpx;
+	color: #ffffff;
+	font-weight: bold;
 }
 
 .payment-name {
@@ -332,7 +373,7 @@ export default {
 .total-amount {
 	font-size: 36rpx;
 	font-weight: bold;
-	color: #ff4444;
+	color: #90d26c;
 }
 
 .pay-button {
@@ -351,6 +392,8 @@ export default {
 .pay-button::after {
 	border: none;
 }
+
+.button-hover {
+	opacity: 0.85;
+}
 </style>
-
-

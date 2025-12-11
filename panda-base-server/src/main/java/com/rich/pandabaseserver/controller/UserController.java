@@ -39,7 +39,7 @@ public class UserController {
     private UserService userService;
 
     /**
-     * 用户注册
+     * 用户注册（手机号+昵称版）
      *
      * @param userRegisterRequest 用户注册请求
      * @return 注册结果
@@ -47,6 +47,18 @@ public class UserController {
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR);
+        
+        // 优先使用新版手机号注册
+        if (userRegisterRequest.getPhone() != null && !userRegisterRequest.getPhone().isEmpty()) {
+            String phone = userRegisterRequest.getPhone();
+            String nickname = userRegisterRequest.getNickname();
+            String password = userRegisterRequest.getPassword();
+            String checkPassword = userRegisterRequest.getCheckPassword();
+            long result = userService.userRegisterWithPhone(phone, nickname, password, checkPassword);
+            return ResultUtils.success(result);
+        }
+        
+        // 兼容旧版账号注册
         String account = userRegisterRequest.getAccount();
         String password = userRegisterRequest.getPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
@@ -56,6 +68,7 @@ public class UserController {
 
     /**
      * 用户登录
+     * TODO：若后期发布到微信小程序，需改为微信登录
      *
      * @param userLoginRequest 用户登录请求
      * @param request          请求对象

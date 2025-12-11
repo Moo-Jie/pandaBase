@@ -26,6 +26,7 @@ import java.util.List;
  * @author @author DuRuiChi
  */
 @Service
+@lombok.extern.slf4j.Slf4j
 public class RedemptionRecordServiceImpl extends ServiceImpl<RedemptionRecordMapper, RedemptionRecord>  implements RedemptionRecordService{
 
     @Autowired
@@ -114,5 +115,60 @@ public class RedemptionRecordServiceImpl extends ServiceImpl<RedemptionRecordMap
             case 2 -> "已发货";
             default -> "未知";
         };
+    }
+
+    @Override
+    public Boolean shipRecord(Long recordId, String trackingNumber) {
+        ThrowUtils.throwIf(recordId == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(trackingNumber == null || trackingNumber.trim().isEmpty(), 
+                ErrorCode.PARAMS_ERROR, "物流单号不能为空");
+
+        RedemptionRecord record = this.getById(recordId);
+        ThrowUtils.throwIf(record == null, ErrorCode.NOT_FOUND_ERROR, "兑换记录不存在");
+
+        // 只有兑换中的记录才能发货
+        if (record.getStatus() == null || !record.getStatus().equals(0)) {
+            throw new com.rich.pandabaseserver.exception.BusinessException(
+                    ErrorCode.OPERATION_ERROR, "当前状态无法发货");
+        }
+
+        // 更新发货信息
+        record.setTrackingNumber(trackingNumber.trim());
+        record.setShipTime(java.time.LocalDateTime.now());
+        record.setStatus(2); // 已发货
+        record.setUpdateTime(java.time.LocalDateTime.now());
+
+        boolean updateResult = this.updateById(record);
+        if (updateResult) {
+            log.info("兑换记录发货成功，记录ID：{}，物流单号：{}", recordId, trackingNumber);
+        }
+
+        return updateResult;
+    }
+
+    @Override
+    public Boolean completeRecord(Long recordId) {
+        ThrowUtils.throwIf(recordId == null, ErrorCode.PARAMS_ERROR);
+
+        RedemptionRecord record = this.getById(recordId);
+        ThrowUtils.throwIf(record == null, ErrorCode.NOT_FOUND_ERROR, "兑换记录不存在");
+
+        // 只有已发货的记录才能完成
+        if (record.getStatus() == null || !record.getStatus().equals(2)) {
+            throw new com.rich.pandabaseserver.exception.BusinessException(
+                    ErrorCode.OPERATION_ERROR, "当前状态无法完成");
+        }
+
+        // 更新为已完成
+        record.setStatus(1);
+        record.setCompleteTime(java.time.LocalDateTime.now());
+        record.setUpdateTime(java.time.LocalDateTime.now());
+
+        boolean updateResult = this.updateById(record);
+        if (updateResult) {
+            log.info("兑换记录完成，记录ID：{}", recordId);
+        }
+
+        return updateResult;
     }
 }

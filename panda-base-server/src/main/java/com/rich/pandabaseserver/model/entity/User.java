@@ -65,9 +65,9 @@ public class User implements Serializable {
     private String avatarUrl;
 
     /**
-     * 角色
+     * 用户角色 1-普通用户 2-管理员 3-超级管理员
      **/
-    private String role;
+    private Integer role;
 
     /**
      * 手机号

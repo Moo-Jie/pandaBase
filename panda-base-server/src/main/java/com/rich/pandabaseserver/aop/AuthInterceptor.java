@@ -40,7 +40,7 @@ public class AuthInterceptor {
     @Around("@annotation(authCheck)")
     public Object doInterceptor(ProceedingJoinPoint joinPoint, AuthCheck authCheck) throws Throwable {
         // 从注解获取必须的角色值
-        String mustRole = authCheck.mustRole();
+        int mustRole = authCheck.mustRole();
 
         // 获取当前HTTP请求对象
         RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
@@ -49,24 +49,20 @@ public class AuthInterceptor {
         // 从会话中获取当前登录用户
         User loginUser = userService.getLoginUser(request);
 
-        // 将角色字符串转换为枚举类型
-        UserRoleEnum mustRoleEnum = UserRoleEnum.getEnumByValue(mustRole);
-
-        // 如果不需要特定权限，直接放行
-        if (mustRoleEnum == null) {
+        // 如果不需要特定权限（角色值为0），直接放行
+        if (mustRole == 0) {
             return joinPoint.proceed();
         }
 
-        // 获取当前用户的角色枚举
-        UserRoleEnum userRoleEnum = UserRoleEnum.getEnumByValue(loginUser.getRole());
-
-        // 用户角色无效时拒绝访问
-        if (userRoleEnum == null) {
+        // 验证用户角色是否有效
+        Integer userRole = loginUser.getRole();
+        if (userRole == null || UserRoleEnum.getEnumByValue(userRole) == null) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
 
-        // 管理员权限校验：当需要管理员权限但用户不是管理员时
-        if (UserRoleEnum.ADMIN.equals(mustRoleEnum) && !UserRoleEnum.ADMIN.equals(userRoleEnum)) {
+        // 权限校验：用户角色等级必须大于或等于要求的角色等级
+        // 角色等级：普通用户(1) < 管理员(2) < 超级管理员(3)
+        if (userRole < mustRole) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
 
