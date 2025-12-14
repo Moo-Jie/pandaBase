@@ -23,6 +23,7 @@ spring:
     active: local
 server:
   port: 8101
+  domain: http://localhost:8101
   servlet:
     context-path: /api
     # cookie 30 天过期
@@ -40,3 +41,15 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+
+# 本地文件上传配置
+file:
+  upload-path: uploads
+  upload:
+    # 上传文件存储路径（相对路径）
+    path: uploads/
+    # 允许上传的最大文件大小（MB）
+    max-size: 10
+    # 允许的文件类型
+    allowed-types: jpg,jpeg,png,gif,webp
+

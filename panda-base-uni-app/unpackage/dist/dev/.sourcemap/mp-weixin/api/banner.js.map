@@ -1,0 +1,1 @@
+{"version":3,"file":"banner.js","sources":["api/banner.js"],"sourcesContent":["// Banner轮播图相关接口\r\nimport { get } from '../utils/request.js';\r\n\r\n/**\r\n * 获取有效的Banner列表\r\n */\r\nexport function getActiveBanners() {\r\n\treturn get('/banner/list/active', {});\r\n}\r\n\r\n"],"names":["get"],"mappings":";;AAMO,SAAS,mBAAmB;AAClC,SAAOA,cAAG,IAAC,uBAAuB,CAAA,CAAE;AACrC;;"}

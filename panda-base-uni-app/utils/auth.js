@@ -1,5 +1,4 @@
 // 登录状态管理工具
-const TOKEN_KEY = 'user_token';
 const USER_INFO_KEY = 'user_info';
 
 /**
@@ -27,7 +26,7 @@ export function getUserInfo() {
  */
 export function clearUserInfo() {
 	uni.removeStorageSync(USER_INFO_KEY);
-	uni.removeStorageSync(TOKEN_KEY);
+	uni.removeStorageSync('user_cookies');
 }
 
 /**

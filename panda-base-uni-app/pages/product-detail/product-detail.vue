@@ -3,7 +3,7 @@
 		<view class="container">
 			<!-- 商品图片 -->
 			<view class="product-image-section">
-				<image class="product-image" :src="product.imageUrl || '/static/logo.png'" mode="aspectFill"></image>
+				<image class="product-image" :src="product.imageUrl || '/static/images/logo.png'" mode="widthFix"></image>
 			</view>
 			
 			<!-- 商品信息 -->
@@ -154,13 +154,13 @@ export default {
 
 .product-image-section {
 	width: 100%;
-	height: 600rpx;
 	background-color: #f5f5f5;
 }
 
 .product-image {
 	width: 100%;
-	height: 100%;
+	height: auto;
+	display: block;
 }
 
 .product-info {
@@ -260,7 +260,7 @@ export default {
 .buy-button {
 	width: 100%;
 	height: 88rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	border-radius: 44rpx;
 	font-size: 32rpx;
 	font-weight: bold;

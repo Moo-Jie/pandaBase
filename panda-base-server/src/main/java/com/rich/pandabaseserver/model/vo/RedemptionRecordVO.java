@@ -48,6 +48,12 @@ public class RedemptionRecordVO implements Serializable {
     private String redemptionCode;
 
     /**
+     * 兑换码（完整）
+     */
+    @Schema(description = "兑换码（完整）")
+    private String fullRedemptionCode;
+
+    /**
      * 商品ID
      */
     @Schema(description = "商品ID")
@@ -60,7 +66,7 @@ public class RedemptionRecordVO implements Serializable {
     private String productName;
 
     /**
-     * 商品类型 1-年卡 2-月卡 3-次票 4-实物商品 5-组合商品
+     * 商品类型 1-年卡 2-月卡 3-次票 4-实物商品
      */
     @Schema(description = "商品类型")
     private Integer productType;

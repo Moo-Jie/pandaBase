@@ -249,7 +249,7 @@ export default {
 .redeem-btn {
 	width: 100%;
 	height: 88rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	border-radius: 44rpx;
 	font-size: 32rpx;
 	font-weight: bold;

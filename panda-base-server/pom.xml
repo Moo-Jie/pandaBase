@@ -67,10 +67,30 @@
             <artifactId>langchain4j-community-redis-spring-boot-starter</artifactId>
             <version>1.1.0-beta7</version>
         </dependency>
+        <!-- 多云存储统一接口 -->
+        <!-- x-file-storage for OSS  -->
+        <dependency>
+            <groupId>org.dromara.x-file-storage</groupId>
+            <artifactId>x-file-storage-spring</artifactId>
+            <version>2.2.1</version>
+        </dependency>
+        <!-- 阿里云OSS-SDK -->
+        <!-- 源：https://help.aliyun.com/product/31815.html -->
+        <dependency>
+            <groupId>com.aliyun.oss</groupId>
+            <artifactId>aliyun-sdk-oss</artifactId>
+            <version>3.16.1</version>
+        </dependency>
         <!-- caffeine 本地缓存 -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
+        </dependency>
+        <!-- 微信小程序 SDK -->
+        <dependency>
+            <groupId>com.github.binarywang</groupId>
+            <artifactId>weixin-java-miniapp</artifactId>
+            <version>4.6.0</version>
         </dependency>
         <!-- MyBatis Flex -->
         <!-- https://mybatis-flex.com/zh/intro/what-is-mybatisflex.html -->
@@ -99,6 +119,17 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>5.8.38</version>
+        </dependency>
+        <!-- Apache POI for Excel -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>5.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.5</version>
         </dependency>
         <!-- Knife4j Swagger 生成API文档 -->
         <!-- https://doc.xiaominfo.com/docs/quick-start#spring-boot-3 -->

@@ -2,14 +2,13 @@ package com.rich.pandabaseserver.service.impl;
 
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.crypto.SecureUtil;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.rich.pandabaseserver.exception.BusinessException;
 import com.rich.pandabaseserver.exception.ErrorCode;
 import com.rich.pandabaseserver.exception.ThrowUtils;
 import com.rich.pandabaseserver.mapper.RedemptionCodeMapper;
-import com.rich.pandabaseserver.model.entity.MembershipCard;
-import com.rich.pandabaseserver.model.entity.Product;
-import com.rich.pandabaseserver.model.entity.RedemptionCode;
+import com.rich.pandabaseserver.model.entity.*;
 import com.rich.pandabaseserver.model.enums.MembershipCardStatusEnum;
 import com.rich.pandabaseserver.model.enums.ProductTypeEnum;
 import com.rich.pandabaseserver.model.enums.RedemptionCodeStatusEnum;
@@ -42,6 +41,12 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
 
     @Autowired
     private com.rich.pandabaseserver.service.RedemptionRecordService redemptionRecordService;
+
+    @Autowired
+    private com.rich.pandabaseserver.service.UserPhysicalProductService userPhysicalProductService;
+
+    @Autowired
+    private com.rich.pandabaseserver.service.ProductComboDetailService productComboDetailService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -190,15 +195,15 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
             // 过期时间：默认1年
             LocalDateTime expireTime = LocalDateTime.now().plusYears(1);
 
-            // 根据购买数量，为每一份创建兑换码
-            for (int i = 0; i < quantity; i++) {
-                // 生成唯一的兑换码（明文）
+            // 判断是否为组合商品
+            if (product.getType().equals(ProductTypeEnum.COMBO.getValue())) {
+                // 组合商品：为整个组合生成一个兑换码
                 String code = generateUniqueCode();
 
-                // 保存兑换码（加密存储）
+                // 保存兑换码（关联组合商品ID）
                 RedemptionCode redemptionCode = RedemptionCode.builder()
-                        .code(code) // 直接存储明文，方便用户使用
-                        .productId(product.getId())
+                        .code(code)
+                        .productId(product.getId()) // 存储组合商品ID
                         .batchNo(batchNo)
                         .status(RedemptionCodeStatusEnum.UNUSED.getValue())
                         .expireTime(expireTime)
@@ -210,7 +215,30 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
                 ThrowUtils.throwIf(!saveResult, ErrorCode.OPERATION_ERROR, "生成兑换码失败");
 
                 codes.add(code);
-                log.info("为订单{}生成兑换码成功，兑换码：{}", orderId, code);
+                log.info("为订单{}的组合商品生成兑换码成功，兑换码：{}", orderId, code);
+            } else {
+                // 单个商品：根据购买数量，为每一份创建兑换码
+                for (int i = 0; i < quantity; i++) {
+                    // 生成唯一的兑换码（明文）
+                    String code = generateUniqueCode();
+
+                    // 保存兑换码
+                    RedemptionCode redemptionCode = RedemptionCode.builder()
+                            .code(code)
+                            .productId(product.getId())
+                            .batchNo(batchNo)
+                            .status(RedemptionCodeStatusEnum.UNUSED.getValue())
+                            .expireTime(expireTime)
+                            .createTime(LocalDateTime.now())
+                            .updateTime(LocalDateTime.now())
+                            .build();
+
+                    boolean saveResult = this.save(redemptionCode);
+                    ThrowUtils.throwIf(!saveResult, ErrorCode.OPERATION_ERROR, "生成兑换码失败");
+
+                    codes.add(code);
+                    log.info("为订单{}生成兑换码成功，兑换码：{}", orderId, code);
+                }
             }
 
             return codes;
@@ -230,7 +258,7 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
         code = code.trim();
 
         // 2. 查询兑换码
-        com.mybatisflex.core.query.QueryWrapper queryWrapper = com.mybatisflex.core.query.QueryWrapper.create()
+        QueryWrapper queryWrapper = QueryWrapper.create()
                 .where("code = ?", code);
 
         RedemptionCode redemptionCode = this.getOne(queryWrapper);
@@ -257,9 +285,58 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
         Product product = productService.getById(redemptionCode.getProductId());
         ThrowUtils.throwIf(product == null, ErrorCode.NOT_FOUND_ERROR, "商品不存在");
 
-        // 6. 实物商品需要校验地址
-        if (!ProductTypeEnum.isVirtualTicket(product.getType())) {
-            ThrowUtils.throwIf(addressId == null, ErrorCode.PARAMS_ERROR, "实物商品需要填写收货地址");
+        // 6. 提前检查会员卡状态，避免更新兑换码后才发现无法兑换
+        if (product.getType().equals(ProductTypeEnum.COMBO.getValue())) {
+            // 组合商品：查询组合详情，检查是否包含会员卡
+            QueryWrapper comboQuery = QueryWrapper.create()
+                    .where("combo_product_id = ?", product.getId());
+            List<ProductComboDetail> comboDetails = productComboDetailService.list(comboQuery);
+            
+            // 检查组合中是否有会员卡
+            boolean hasVirtualTicket = false;
+            for (ProductComboDetail detail : comboDetails) {
+                Product subProduct = productService.getById(detail.getProductId());
+                if (subProduct != null && ProductTypeEnum.isVirtualTicket(subProduct.getType())) {
+                    hasVirtualTicket = true;
+                    break;
+                }
+            }
+            
+            // 如果组合中有会员卡，检查用户是否已有会员卡
+            if (hasVirtualTicket) {
+                QueryWrapper anyCardQuery = QueryWrapper.create()
+                        .where("user_id = ?", userId)
+                        .and("card_type IN (1, 2, 3)")
+                        .and("status = ?", MembershipCardStatusEnum.ACTIVE.getValue())
+                        .and("end_time > ?", LocalDateTime.now());
+                
+                MembershipCard existingCard = membershipCardService.getOne(anyCardQuery);
+                
+                if (existingCard != null) {
+                    // 已有会员卡，不能兑换包含会员卡的组合商品
+                    String cardTypeName = getCardTypeName(existingCard.getCardType());
+                    String expireDate = existingCard.getEndTime().toLocalDate().toString();
+                    throw new BusinessException(ErrorCode.OPERATION_ERROR, 
+                            String.format("您已拥有有效的%s（有效期至%s），无法兑换包含会员卡的组合商品", cardTypeName, expireDate));
+                }
+            }
+        } else if (ProductTypeEnum.isVirtualTicket(product.getType())) {
+            // 单个虚拟商品：检查会员卡状态
+            QueryWrapper anyCardQuery = QueryWrapper.create()
+                    .where("user_id = ?", userId)
+                    .and("card_type IN (1, 2, 3)")
+                    .and("status = ?", MembershipCardStatusEnum.ACTIVE.getValue())
+                    .and("end_time > ?", LocalDateTime.now());
+
+            MembershipCard anyExistingCard = membershipCardService.getOne(anyCardQuery);
+
+            if (anyExistingCard != null) {
+                // 已有任何类型的有效会员卡，不允许兑换单个会员卡
+                String cardTypeName = getCardTypeName(anyExistingCard.getCardType());
+                String expireDate = anyExistingCard.getEndTime().toLocalDate().toString();
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, 
+                        String.format("您已拥有有效的%s（有效期至%s），请等待过期后再兑换新卡", cardTypeName, expireDate));
+            }
         }
 
         // 7. 更新兑换码状态
@@ -271,71 +348,151 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
         boolean updateResult = this.updateById(redemptionCode);
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "兑换失败，请稍后重试");
 
-        // 8. 创建兑换记录
-        String recordNo = "REDEEM" + System.currentTimeMillis() + IdUtil.randomUUID().substring(0, 6).toUpperCase();
-        com.rich.pandabaseserver.model.entity.RedemptionRecord record = com.rich.pandabaseserver.model.entity.RedemptionRecord.builder()
-                .recordNo(recordNo)
-                .userId(userId)
-                .redemptionCodeId(redemptionCode.getId())
-                .productId(product.getId())
-                .productType(product.getType())
-                .status(ProductTypeEnum.isVirtualTicket(product.getType()) ? 1 : 0) // 虚拟商品直接完成，实物商品兑换中
-                .completeTime(ProductTypeEnum.isVirtualTicket(product.getType()) ? LocalDateTime.now() : null)
-                .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
-                .build();
-
-        boolean saveRecordResult = redemptionRecordService.save(record);
-        ThrowUtils.throwIf(!saveRecordResult, ErrorCode.OPERATION_ERROR, "创建兑换记录失败");
-
-        // 9. 如果是虚拟商品，检查会员卡状态并处理
-        if (ProductTypeEnum.isVirtualTicket(product.getType())) {
-            // 查询用户是否已有任何类型的有效会员卡（年卡/月卡/次票）
-            com.mybatisflex.core.query.QueryWrapper anyCardQuery = com.mybatisflex.core.query.QueryWrapper.create()
-                    .where("user_id = ?", userId)
-                    .and("card_type IN (1, 2, 3)") // 年卡、月卡、次票
-                    .and("status = ?", MembershipCardStatusEnum.ACTIVE.getValue())
-                    .and("end_time > ?", LocalDateTime.now());
-
-            MembershipCard anyExistingCard = membershipCardService.getOne(anyCardQuery);
-
-            if (anyExistingCard != null) {
-                // 已有任何类型的有效会员卡，不允许兑换
-                String cardTypeName = getCardTypeName(anyExistingCard.getCardType());
-                String expireDate = anyExistingCard.getEndTime().toLocalDate().toString();
-                throw new BusinessException(ErrorCode.OPERATION_ERROR, 
-                        String.format("您已拥有有效的%s（有效期至%s），请等待过期后再兑换新卡", cardTypeName, expireDate));
+        // 8. 根据商品类型处理
+        if (product.getType().equals(ProductTypeEnum.COMBO.getValue())) {
+            // 组合商品：查询组合详情，为每个子商品分别创建兑换记录
+            QueryWrapper comboQuery = QueryWrapper.create()
+                    .where("combo_product_id = ?", product.getId());
+            List<ProductComboDetail> comboDetails = productComboDetailService.list(comboQuery);
+            
+            // 处理所有子商品，为每个子商品创建独立的兑换记录
+            for (ProductComboDetail detail : comboDetails) {
+                Product subProduct = productService.getById(detail.getProductId());
+                if (subProduct == null) continue;
+                
+                // 为每个子商品创建独立的兑换记录
+                String subRecordNo = "REDEEM" + System.currentTimeMillis() + IdUtil.randomUUID().substring(0, 6).toUpperCase();
+                RedemptionRecord subRecord = RedemptionRecord.builder()
+                        .recordNo(subRecordNo)
+                        .userId(userId)
+                        .redemptionCodeId(redemptionCode.getId())
+                        .productId(subProduct.getId())
+                        .productType(subProduct.getType()) // 子商品类型（1-4）
+                        .status(1)
+                        .completeTime(ProductTypeEnum.isVirtualTicket(subProduct.getType()) ? LocalDateTime.now() : null)
+                        .createTime(LocalDateTime.now())
+                        .updateTime(LocalDateTime.now())
+                        .build();
+                
+                boolean saveSubRecordResult = redemptionRecordService.save(subRecord);
+                ThrowUtils.throwIf(!saveSubRecordResult, ErrorCode.OPERATION_ERROR, "创建子商品兑换记录失败");
+                
+                if (ProductTypeEnum.isVirtualTicket(subProduct.getType())) {
+                    // 虚拟商品：创建会员卡
+                    String cardNumber = generateCardNumber(subProduct.getType());
+                    LocalDateTime startTime = LocalDateTime.now();
+                    LocalDateTime endTime = calculateEndTime(startTime, subProduct.getValidityDays());
+                    
+                    MembershipCard card = MembershipCard.builder()
+                            .userId(userId)
+                            .productId(subProduct.getId())
+                            .cardNumber(cardNumber)
+                            .cardType(subProduct.getType())
+                            .status(MembershipCardStatusEnum.ACTIVE.getValue())
+                            .totalCount(subProduct.getType() == 3 ? 10 : null)
+                            .usedCount(0)
+                            .startTime(startTime)
+                            .endTime(endTime)
+                            .redemptionRecordId(subRecord.getId())
+                            .createTime(LocalDateTime.now())
+                            .updateTime(LocalDateTime.now())
+                            .build();
+                    
+                    membershipCardService.save(card);
+                    log.info("组合商品中的会员卡创建成功，卡号：{}，兑换记录号：{}", cardNumber, subRecordNo);
+                } else {
+                    // 实体商品：添加到用户实体商品表
+                    for (int i = 0; i < detail.getQuantity(); i++) {
+                        UserPhysicalProduct physicalProduct =
+                            UserPhysicalProduct.builder()
+                                .userId(userId)
+                                .productId(subProduct.getId())
+                                .productName(subProduct.getName())
+                                .productImage(subProduct.getImageUrl())
+                                .quantity(1)
+                                .status(0)
+                                .sourceType(1)
+                                .redemptionRecordId(subRecord.getId())
+                                .createTime(LocalDateTime.now())
+                                .updateTime(LocalDateTime.now())
+                                .build();
+                        
+                        userPhysicalProductService.save(physicalProduct);
+                    }
+                    log.info("组合商品中的实体商品添加成功，商品：{}，数量：{}，兑换记录号：{}", 
+                            subProduct.getName(), detail.getQuantity(), subRecordNo);
+                }
             }
-
-            // 没有任何有效会员卡，可以兑换，创建新卡
-            String cardNumber = generateCardNumber(product.getType());
-            LocalDateTime startTime = LocalDateTime.now();
-            LocalDateTime endTime = calculateEndTime(startTime, product.getValidityDays());
-
-            MembershipCard card = MembershipCard.builder()
+            
+            log.info("组合商品兑换成功，已为{}个子商品分别创建兑换记录", comboDetails.size());
+            
+        } else {
+            // 单个商品（虚拟或实体）：创建一条兑换记录
+            String recordNo = "REDEEM" + System.currentTimeMillis() + IdUtil.randomUUID().substring(0, 6).toUpperCase();
+            RedemptionRecord record = RedemptionRecord.builder()
+                    .recordNo(recordNo)
                     .userId(userId)
+                    .redemptionCodeId(redemptionCode.getId())
                     .productId(product.getId())
-                    .cardNumber(cardNumber)
-                    .cardType(product.getType())
-                    .status(MembershipCardStatusEnum.ACTIVE.getValue())
-                    .totalCount(product.getType() == 3 ? 10 : null)
-                    .usedCount(0)
-                    .startTime(startTime)
-                    .endTime(endTime)
-                    .redemptionRecordId(record.getId()) // 关联兑换记录ID
+                    .productType(product.getType())
+                    .status(1)
+                    .completeTime(ProductTypeEnum.isVirtualTicket(product.getType()) ? LocalDateTime.now() : null)
                     .createTime(LocalDateTime.now())
                     .updateTime(LocalDateTime.now())
                     .build();
 
-            boolean saveResult = membershipCardService.save(card);
-            ThrowUtils.throwIf(!saveResult, ErrorCode.OPERATION_ERROR, "生成会员卡失败");
+            boolean saveRecordResult = redemptionRecordService.save(record);
+            ThrowUtils.throwIf(!saveRecordResult, ErrorCode.OPERATION_ERROR, "创建兑换记录失败");
+            
+            if (ProductTypeEnum.isVirtualTicket(product.getType())) {
+                // 单个虚拟商品：创建会员卡（会员卡检查已在前面完成）
+                String cardNumber = generateCardNumber(product.getType());
+                LocalDateTime startTime = LocalDateTime.now();
+                LocalDateTime endTime = calculateEndTime(startTime, product.getValidityDays());
 
-            log.info("虚拟商品兑换成功，生成新会员卡：{}，关联兑换记录：{}", cardNumber, recordNo);
-        } else {
-            log.info("实物商品兑换成功，等待发货，兑换记录号：{}", recordNo);
+                MembershipCard card = MembershipCard.builder()
+                        .userId(userId)
+                        .productId(product.getId())
+                        .cardNumber(cardNumber)
+                        .cardType(product.getType())
+                        .status(MembershipCardStatusEnum.ACTIVE.getValue())
+                        .totalCount(product.getType() == 3 ? 10 : null)
+                        .usedCount(0)
+                        .startTime(startTime)
+                        .endTime(endTime)
+                        .redemptionRecordId(record.getId())
+                        .createTime(LocalDateTime.now())
+                        .updateTime(LocalDateTime.now())
+                        .build();
+
+                boolean saveResult = membershipCardService.save(card);
+                ThrowUtils.throwIf(!saveResult, ErrorCode.OPERATION_ERROR, "生成会员卡失败");
+
+                log.info("虚拟商品兑换成功，生成新会员卡：{}，关联兑换记录：{}", cardNumber, recordNo);
+            } else {
+                // 单个实物商品：添加到用户实体商品表
+                UserPhysicalProduct physicalProduct =
+                    UserPhysicalProduct.builder()
+                        .userId(userId)
+                        .productId(product.getId())
+                        .productName(product.getName())
+                        .productImage(product.getImageUrl())
+                        .quantity(1)
+                        .status(0) // 未核销
+                        .sourceType(1) // 来源：兑换码兑换
+                        .redemptionRecordId(record.getId())
+                        .createTime(LocalDateTime.now())
+                        .updateTime(LocalDateTime.now())
+                        .build();
+                
+                boolean savePhysicalResult = userPhysicalProductService.save(physicalProduct);
+                ThrowUtils.throwIf(!savePhysicalResult, ErrorCode.OPERATION_ERROR, "添加实体商品失败");
+                
+                log.info("实物商品兑换成功，已添加到用户商品列表，兑换记录号：{}", recordNo);
+            }
         }
 
-        log.info("兑换码使用成功，兑换码：{}，用户ID：{}，兑换记录号：{}", code, userId, recordNo);
+        log.info("兑换码使用成功，兑换码：{}，用户ID：{}", code, userId);
         return true;
     }
 
@@ -367,7 +524,7 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
 
         // 根据批次号查询兑换码
         String batchNo = "ORDER" + orderId;
-        com.mybatisflex.core.query.QueryWrapper queryWrapper = com.mybatisflex.core.query.QueryWrapper.create()
+        QueryWrapper queryWrapper = QueryWrapper.create()
                 .where("batch_no = ?", batchNo);
 
         List<RedemptionCode> codeList = this.list(queryWrapper);

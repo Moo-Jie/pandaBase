@@ -16,6 +16,42 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `banner`
+--
+
+DROP TABLE IF EXISTS `banner`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `banner` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Banner ID',
+  `title` varchar(200) DEFAULT NULL COMMENT 'Banner标题',
+  `image_url` varchar(500) NOT NULL COMMENT '图片URL',
+  `link_type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '链接类型 0-无跳转 1-商品详情 2-页面跳转 3-外部链接',
+  `link_value` varchar(500) DEFAULT NULL COMMENT '链接值（商品ID/页面路径/外部URL）',
+  `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序（数字越小越靠前）',
+  `status` tinyint(1) NOT NULL DEFAULT '1' COMMENT '状态 0-禁用 1-启用',
+  `start_time` datetime DEFAULT NULL COMMENT '生效开始时间',
+  `end_time` datetime DEFAULT NULL COMMENT '生效结束时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_sort` (`sort_order`),
+  KEY `idx_time` (`start_time`,`end_time`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Banner轮播图表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `banner`
+--
+
+LOCK TABLES `banner` WRITE;
+/*!40000 ALTER TABLE `banner` DISABLE KEYS */;
+INSERT INTO `banner` VALUES (1,'欢迎来到熊猫基地','https://img.tukuppt.com/png_preview/00/49/30/CNQEgKhT9I.jpg!/fw/780',0,NULL,1,1,'2024-01-01 00:00:00','2025-12-31 23:59:59','2025-12-11 13:36:20','2025-12-11 14:54:04'),(2,'年卡会员','/static/images/年卡VIP2.png',1,'1',2,1,'2024-01-01 00:00:00','2025-12-31 23:59:59','2025-12-11 13:36:20','2025-12-13 18:51:06'),(3,'月卡会员','/static/images/月卡VIP2.png',1,'2',3,1,'2024-01-01 00:00:00','2025-12-31 23:59:59','2025-12-11 13:36:20','2025-12-13 18:51:06');
+/*!40000 ALTER TABLE `banner` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `customer_service`
 --
 
@@ -45,7 +81,6 @@ CREATE TABLE `customer_service` (
 
 LOCK TABLES `customer_service` WRITE;
 /*!40000 ALTER TABLE `customer_service` DISABLE KEYS */;
-INSERT INTO `customer_service` VALUES (1,1,'SESSION202401051001',1,1,'2024-01-05 11:00:00','2024-01-05 10:30:00','2024-01-05 11:00:00'),(2,2,'SESSION202401051002',2,0,'2024-01-05 11:30:00','2024-01-05 11:00:00','2024-01-05 11:30:00');
 /*!40000 ALTER TABLE `customer_service` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -76,7 +111,6 @@ CREATE TABLE `export_record` (
 
 LOCK TABLES `export_record` WRITE;
 /*!40000 ALTER TABLE `export_record` DISABLE KEYS */;
-INSERT INTO `export_record` VALUES (1,1,'财务营收报表_20240105.xlsx','https://export.file/finance_20240105.xlsx','{\"startDate\":\"2024-01-01\",\"endDate\":\"2024-01-05\"}','管理员','2024-01-05 15:00:00'),(2,2,'待发货清单_20240105.xlsx','https://export.file/shipping_20240105.xlsx','{\"status\":0}','管理员','2024-01-05 16:00:00');
 /*!40000 ALTER TABLE `export_record` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -98,7 +132,7 @@ CREATE TABLE `membership_card` (
   `used_count` int NOT NULL DEFAULT '0' COMMENT '已使用次数',
   `start_time` datetime DEFAULT NULL COMMENT '开始时间',
   `end_time` datetime DEFAULT NULL COMMENT '结束时间',
-  `order_id` bigint DEFAULT NULL COMMENT '来源订单ID（购买方式）',
+  `order_id` bigint DEFAULT NULL COMMENT '来源订单ID',
   `redemption_record_id` bigint DEFAULT NULL COMMENT '来源兑换记录ID（兑换方式）',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -110,7 +144,7 @@ CREATE TABLE `membership_card` (
   KEY `idx_end_time` (`end_time`),
   KEY `idx_order` (`order_id`),
   KEY `idx_redemption` (`redemption_record_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员卡表';
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员卡表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -119,7 +153,6 @@ CREATE TABLE `membership_card` (
 
 LOCK TABLES `membership_card` WRITE;
 /*!40000 ALTER TABLE `membership_card` DISABLE KEYS */;
-INSERT INTO `membership_card` VALUES (1,1,1,'CARD202401010001',1,1,NULL,0,'2024-01-01 00:00:00','2025-01-01 00:00:00',1,'2024-01-01 10:05:00','2024-01-01 10:05:00'),(2,2,2,'CARD202401020001',2,1,NULL,0,'2024-01-02 00:00:00','2024-02-02 00:00:00',2,'2024-01-02 11:05:00','2024-01-02 11:05:00'),(3,3,3,'CARD202401030001',3,1,10,3,'2024-01-03 00:00:00','2024-07-03 00:00:00',3,'2024-01-03 12:05:00','2024-01-10 15:00:00');
 /*!40000 ALTER TABLE `membership_card` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -143,7 +176,7 @@ CREATE TABLE `order_item` (
   PRIMARY KEY (`id`),
   KEY `idx_order` (`order_id`),
   KEY `idx_product` (`product_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='订单商品明细表';
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='订单商品明细表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -152,7 +185,6 @@ CREATE TABLE `order_item` (
 
 LOCK TABLES `order_item` WRITE;
 /*!40000 ALTER TABLE `order_item` DISABLE KEYS */;
-INSERT INTO `order_item` VALUES (1,1,1,'年卡会员','https://product.img/year.jpg',299.00,1,299.00,'2024-01-01 10:00:00'),(2,2,2,'月卡会员','https://product.img/month.jpg',39.90,1,39.90,'2024-01-02 11:00:00'),(3,3,3,'次票(10次)','https://product.img/times.jpg',199.00,1,199.00,'2024-01-03 12:00:00'),(4,4,5,'会员+玩偶套餐','https://product.img/combo.jpg',359.00,1,359.00,'2024-01-04 13:00:00'),(5,5,4,'熊猫玩偶','https://product.img/toy.jpg',99.00,1,99.00,'2024-01-05 14:00:00');
 /*!40000 ALTER TABLE `order_item` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -193,7 +225,7 @@ CREATE TABLE `product` (
 
 LOCK TABLES `product` WRITE;
 /*!40000 ALTER TABLE `product` DISABLE KEYS */;
-INSERT INTO `product` VALUES (1,1,'年卡会员','享受一年内无限次入园权限','https://product.img/year.jpg',1,299.00,399.00,1000,365,1,1,'2024-01-01 09:00:00','2024-01-01 09:00:00'),(2,1,'月卡会员','享受一月内无限次入园权限','https://product.img/month.jpg',2,39.90,49.90,5000,30,1,1,'2024-01-01 09:00:00','2024-01-01 09:00:00'),(3,1,'次票(10次)','可入园10次的有效票证','https://product.img/times.jpg',3,199.00,249.00,2000,180,0,1,'2024-01-01 09:00:00','2024-01-01 09:00:00'),(4,2,'熊猫玩偶','限量版熊猫毛绒玩偶','https://product.img/toy.jpg',4,99.00,129.00,500,NULL,1,1,'2024-01-01 09:00:00','2024-01-01 09:00:00'),(5,3,'会员+玩偶套餐','年卡会员+熊猫玩偶超值套餐','https://product.img/combo.jpg',5,359.00,528.00,200,NULL,1,1,'2024-01-01 09:00:00','2024-01-01 09:00:00');
+INSERT INTO `product` VALUES (1,1,'年卡会员','享受一年内无限次入园权限','https://rich-tams.oss-cn-beijing.aliyuncs.com/%E5%B9%B4%E5%8D%A1%E5%95%86%E5%93%81%E5%9B%BE.png',1,99.00,399.00,980,365,1,1,'2024-01-01 09:00:00','2025-12-13 23:43:48'),(2,1,'月卡会员','享受一月内无限次入园权限','https://rich-tams.oss-cn-beijing.aliyuncs.com/%E6%9C%88%E5%8D%A1%E5%95%86%E5%93%81%E5%9B%BE.png',2,39.90,49.90,4992,30,1,1,'2024-01-01 09:00:00','2025-12-13 23:43:48'),(3,1,'次票(10次)','可入园10次的有效票证','https://rich-tams.oss-cn-beijing.aliyuncs.com/%E6%9C%88%E5%8D%A1%E5%95%86%E5%93%81%E5%9B%BE.png',3,50.00,249.00,1999,NULL,0,1,'2024-01-01 09:00:00','2025-12-14 13:38:42'),(4,2,'食材礼包','新鲜食材礼包','https://rich-tams.oss-cn-beijing.aliyuncs.com/%E9%A3%9F%E6%9D%90%E7%A4%BC%E5%8C%85%E5%95%86%E5%93%81%E5%9B%BE.png',4,99.00,129.00,496,NULL,0,1,'2024-01-01 09:00:00','2025-12-14 00:11:12'),(5,3,'年卡+基础蔬菜包*12','年卡+基础蔬菜包*12超值套餐','https://rich-tams.oss-cn-beijing.aliyuncs.com/%E5%B9%B4%E5%8D%A1%E5%95%86%E5%93%81%E5%9B%BE.png',5,150.00,528.00,196,NULL,0,1,'2024-01-01 09:00:00','2025-12-14 00:11:12');
 /*!40000 ALTER TABLE `product` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -268,6 +300,13 @@ CREATE TABLE `purchase_order` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '订单ID',
   `order_no` varchar(32) NOT NULL COMMENT '订单编号',
   `user_id` bigint NOT NULL COMMENT '用户ID',
+  `address_id` bigint DEFAULT NULL COMMENT '收货地址ID',
+  `receiver_name` varchar(50) DEFAULT NULL COMMENT '收货人姓名',
+  `receiver_phone` varchar(11) DEFAULT NULL COMMENT '收货人手机号',
+  `province` varchar(50) DEFAULT NULL COMMENT '省份',
+  `city` varchar(50) DEFAULT NULL COMMENT '城市',
+  `district` varchar(50) DEFAULT NULL COMMENT '区县',
+  `detail_address` varchar(200) DEFAULT NULL COMMENT '详细地址',
   `total_amount` decimal(10,2) NOT NULL COMMENT '订单总金额',
   `pay_amount` decimal(10,2) NOT NULL COMMENT '实际支付金额',
   `order_status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '订单状态 0-待支付 1-已支付 2-已取消 3-已退款',
@@ -283,8 +322,9 @@ CREATE TABLE `purchase_order` (
   KEY `idx_user_id` (`user_id`),
   KEY `idx_order_status` (`order_status`),
   KEY `idx_create_time` (`create_time`),
-  KEY `idx_pay_time` (`pay_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='购买订单表';
+  KEY `idx_pay_time` (`pay_time`),
+  KEY `idx_address_id` (`address_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='购买订单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -293,7 +333,6 @@ CREATE TABLE `purchase_order` (
 
 LOCK TABLES `purchase_order` WRITE;
 /*!40000 ALTER TABLE `purchase_order` DISABLE KEYS */;
-INSERT INTO `purchase_order` VALUES (1,'ORDER202401010001',1,299.00,299.00,1,'2024-01-01 10:05:00',NULL,NULL,'2024-01-01 10:20:00','WX202401010001','2024-01-01 10:00:00','2024-01-01 10:05:00'),(2,'ORDER202401020001',2,39.90,39.90,1,'2024-01-02 11:05:00',NULL,NULL,'2024-01-02 11:20:00','WX202401020001','2024-01-02 11:00:00','2024-01-02 11:05:00'),(3,'ORDER202401030001',3,199.00,199.00,1,'2024-01-03 12:05:00',NULL,NULL,'2024-01-03 12:20:00','WX202401030001','2024-01-03 12:00:00','2024-01-03 12:05:00'),(4,'ORDER202401040001',1,359.00,359.00,0,NULL,NULL,NULL,'2024-01-04 13:20:00',NULL,'2024-01-04 13:00:00','2024-01-04 13:00:00'),(5,'ORDER202401050001',2,99.00,99.00,2,NULL,'2024-01-05 14:10:00','临时改变主意','2024-01-05 14:20:00',NULL,'2024-01-05 14:00:00','2024-01-05 14:10:00');
 /*!40000 ALTER TABLE `purchase_order` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -321,7 +360,7 @@ CREATE TABLE `redemption_code` (
   KEY `idx_batch` (`batch_no`),
   KEY `idx_status` (`status`),
   KEY `idx_expire` (`expire_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='兑换码表';
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='兑换码表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -330,7 +369,6 @@ CREATE TABLE `redemption_code` (
 
 LOCK TABLES `redemption_code` WRITE;
 /*!40000 ALTER TABLE `redemption_code` DISABLE KEYS */;
-INSERT INTO `redemption_code` VALUES (1,'RED20240101001',1,'BATCH20240101',0,'2024-12-31 23:59:59',NULL,NULL,'2024-01-01 09:00:00','2024-01-01 09:00:00'),(2,'RED20240101002',1,'BATCH20240101',1,'2024-12-31 23:59:59','2024-01-05 10:00:00',1,'2024-01-01 09:00:00','2024-01-05 10:00:00'),(3,'RED20240102001',4,'BATCH20240102',0,'2024-12-31 23:59:59',NULL,NULL,'2024-01-02 09:00:00','2024-01-02 09:00:00'),(4,'RED20240102002',4,'BATCH20240102',2,'2024-01-15 23:59:59',NULL,NULL,'2024-01-02 09:00:00','2024-01-16 00:00:00');
 /*!40000 ALTER TABLE `redemption_code` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -347,7 +385,7 @@ CREATE TABLE `redemption_record` (
   `user_id` bigint NOT NULL COMMENT '用户ID',
   `redemption_code_id` bigint NOT NULL COMMENT '兑换码ID',
   `product_id` bigint NOT NULL COMMENT '商品ID',
-  `product_type` tinyint(1) NOT NULL COMMENT '商品类型 1-虚拟票证 2-实物商品',
+  `product_type` tinyint(1) NOT NULL COMMENT '商品类型 1-年卡 2-月卡 3-次票 4-实物商品',
   `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '状态 0-兑换中 1-已完成 2-已发货（实物）',
   `shipping_address` text COMMENT '收货地址JSON',
   `tracking_number` varchar(100) DEFAULT NULL COMMENT '物流单号',
@@ -362,7 +400,7 @@ CREATE TABLE `redemption_record` (
   KEY `idx_product` (`product_id`),
   KEY `idx_status` (`status`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='兑换记录表';
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='兑换记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -371,7 +409,6 @@ CREATE TABLE `redemption_record` (
 
 LOCK TABLES `redemption_record` WRITE;
 /*!40000 ALTER TABLE `redemption_record` DISABLE KEYS */;
-INSERT INTO `redemption_record` VALUES (1,'REDREC20240105001',1,2,1,1,1,NULL,NULL,NULL,'2024-01-05 10:30:00','2024-01-05 10:00:00','2024-01-05 10:30:00');
 /*!40000 ALTER TABLE `redemption_record` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -401,7 +438,7 @@ CREATE TABLE `user` (
   KEY `idx_unionid` (`unionid`),
   KEY `idx_phone` (`phone`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表';
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -410,7 +447,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'oX8aV5J7jJ9KlP0m3','oX8aV5J7jJ9KlP0m3','100001','6fafed677bef3ab89e9fd905ff48f0ce','用户张三','https://avatar.url/1.jpg',1,'13800138001',0,1,'2024-01-01 10:00:00','2025-12-10 00:36:24'),(2,'oX8aV5J7jJ9KlP0m4','oX8aV5J7jJ9KlP0m4','100002','6fafed677bef3ab89e9fd905ff48f0ce','用户李四','https://avatar.url/2.jpg',1,'13800138002',0,1,'2024-01-02 11:00:00','2025-12-10 00:36:24'),(3,'oX8aV5J7jJ9KlP0m5','oX8aV5J7jJ9KlP0m5','100003','6fafed677bef3ab89e9fd905ff48f0ce','用户王五','https://avatar.url/3.jpg',1,'13800138003',0,1,'2024-01-03 12:00:00','2025-12-10 00:36:24'),(4,'oX8aV5J7jJ9KlP0m6','oX8aV5J7jJ9KlP0m6','100004','6fafed677bef3ab89e9fd905ff48f0ce','用户赵六','https://avatar.url/4.jpg',2,'13800138004',0,1,'2024-01-04 13:00:00','2025-12-10 00:36:24'),(6,'oX8aV5J7jJ9KlP0m8','oX8aV5J7jJ9KlP0m8','admin','6fafed677bef3ab89e9fd905ff48f0ce','管理员','https://rich-tams.oss-cn-beijing.aliyuncs.com/RichInterview/691e5f5fe4b081baa87c2741.jpg',3,'18888888888',0,1,'2025-12-10 00:26:00','2025-12-10 00:36:24');
+INSERT INTO `user` VALUES (11,'oVdJy7TLYgGzJhAdLmz6VBXk6wdQ',NULL,'XMJD_22429',NULL,'莫桀_','https://rich-tams.oss-cn-beijing.aliyuncs.com/RichInterview/693e371975f1cdca7a5aa13c.jpeg',1,NULL,0,1,'2025-12-14 00:00:26','2025-12-14 00:00:26');
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -436,7 +473,7 @@ CREATE TABLE `user_address` (
   PRIMARY KEY (`id`),
   KEY `idx_user` (`user_id`),
   KEY `idx_default` (`is_default`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户地址表';
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户地址表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -445,8 +482,47 @@ CREATE TABLE `user_address` (
 
 LOCK TABLES `user_address` WRITE;
 /*!40000 ALTER TABLE `user_address` DISABLE KEYS */;
-INSERT INTO `user_address` VALUES (1,1,'张三','13800138001','北京市','北京市','朝阳区','朝阳门外大街100号',1,'2024-01-01 10:30:00','2024-01-01 10:30:00'),(2,1,'张三公司','13800138001','北京市','北京市','海淀区','中关村软件园200号',0,'2024-01-02 11:30:00','2024-01-02 11:30:00'),(3,2,'李四','13800138002','上海市','上海市','浦东新区','陆家嘴环路300号',1,'2024-01-02 12:00:00','2024-01-02 12:00:00'),(4,3,'王五','13800138003','广州市','广东省','天河区','天河路400号',1,'2024-01-03 13:00:00','2024-01-03 13:00:00'),(5,4,'赵六','13800138004','深圳市','广东省','南山区','科技园路500号',1,'2024-01-04 14:00:00','2024-01-04 14:00:00');
+INSERT INTO `user_address` VALUES (9,6,'管理员','18888888888','北京市','北京市','东城区','xxx街道xxx小区东门快递驿站',1,'2025-12-11 16:02:45','2025-12-11 18:56:53'),(10,6,'管理员','18888888888','浙江省','宁波市','镇海区','xxx街道xx小区西门xx超市',0,'2025-12-11 16:03:29','2025-12-11 18:56:53'),(13,6,'xxx','18888888888','北京市','北京市','东城区','xxxxxx',0,'2025-12-11 18:52:23','2025-12-11 18:56:52'),(14,10,'杜瑞持','18888888888','北京市','北京市','东城区','1',1,'2025-12-13 18:36:58','2025-12-13 18:36:58'),(15,11,'张三','18888888888','山西省','阳泉市','郊区','xxxx小区',1,'2025-12-14 00:34:28','2025-12-14 00:34:28');
 /*!40000 ALTER TABLE `user_address` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user_physical_product`
+--
+
+DROP TABLE IF EXISTS `user_physical_product`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_physical_product` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '实体商品ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `product_id` bigint NOT NULL COMMENT '商品ID',
+  `product_name` varchar(200) NOT NULL COMMENT '商品名称',
+  `product_image` varchar(500) DEFAULT NULL COMMENT '商品图片',
+  `quantity` int NOT NULL DEFAULT '1' COMMENT '数量',
+  `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '状态 0-未核销 1-已核销',
+  `source_type` tinyint(1) NOT NULL COMMENT '来源类型 1-兑换码兑换 2-订单购买',
+  `redemption_record_id` bigint DEFAULT NULL COMMENT '来源兑换记录ID',
+  `order_id` bigint DEFAULT NULL COMMENT '来源订单ID',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user` (`user_id`),
+  KEY `idx_product` (`product_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_redemption` (`redemption_record_id`),
+  KEY `idx_order` (`order_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户实体商品表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_physical_product`
+--
+
+LOCK TABLES `user_physical_product` WRITE;
+/*!40000 ALTER TABLE `user_physical_product` DISABLE KEYS */;
+/*!40000 ALTER TABLE `user_physical_product` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -458,4 +534,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-10  0:38:07
+-- Dump completed on 2025-12-14 13:40:42

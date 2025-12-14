@@ -327,7 +327,7 @@ export default {
 	width: 40rpx;
 	height: 40rpx;
 	border-radius: 20rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	color: #ffffff;
 	font-size: 24rpx;
 	font-weight: bold;
@@ -379,7 +379,7 @@ export default {
 .pay-button {
 	width: 280rpx;
 	height: 80rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	border-radius: 40rpx;
 	font-size: 32rpx;
 	font-weight: bold;

@@ -197,7 +197,7 @@ export default {
 
 .default-tag {
 	padding: 6rpx 16rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	color: #ffffff;
 	font-size: 22rpx;
 	border-radius: 12rpx;
@@ -280,7 +280,7 @@ export default {
 .add-btn {
 	width: 100%;
 	height: 88rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	border-radius: 44rpx;
 	font-size: 30rpx;
 	font-weight: bold;

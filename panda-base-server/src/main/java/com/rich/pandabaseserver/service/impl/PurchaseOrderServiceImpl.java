@@ -215,7 +215,7 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新订单状态失败");
 
         // 9. 无论虚拟商品还是实物商品，都生成兑换码
-        List<String> redemptionCodes = new ArrayList<>();
+        List<String> redemptionCodes;
         redemptionCodes = redemptionCodeService.generateRedemptionCodesForOrder(orderId, userId, product, firstItem.getQuantity());
         
         log.info("订单支付成功，已生成兑换码，订单ID：{}，兑换码数量：{}", orderId, redemptionCodes.size());

@@ -75,16 +75,18 @@ public class RedemptionRecordServiceImpl extends ServiceImpl<RedemptionRecordMap
             }
         }
 
-        // 查询兑换码（脱敏显示）
+        // 查询兑换码（脱敏显示和完整兑换码）
         if (record.getRedemptionCodeId() != null) {
             RedemptionCode code = redemptionCodeMapper.selectOneById(record.getRedemptionCodeId());
             if (code != null && code.getCode() != null) {
-                // 脱敏：只显示前4位和后4位
                 String codeStr = code.getCode();
+                // 设置完整兑换码
+                recordVO.setFullRedemptionCode(codeStr);
+                // 脱敏：只显示前4位和后4位
                 if (codeStr.length() > 8) {
-                    recordVO.setRedemptionCode(codeStr.substring(0, 4) + "***" + codeStr.substring(codeStr.length() - 4));
+                    recordVO.setRedemptionCode(codeStr.substring(0, 4) + "****" + codeStr.substring(codeStr.length() - 4));
                 } else {
-                    recordVO.setRedemptionCode("***");
+                    recordVO.setRedemptionCode("****");
                 }
             }
         }

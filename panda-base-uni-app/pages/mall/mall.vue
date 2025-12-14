@@ -1,13 +1,5 @@
 <template>
 	<view class="page">
-		<!-- 搜索栏 -->
-		<view class="search-bar">
-			<view class="search-input">
-				<text class="search-icon">🔍</text>
-				<input class="input" placeholder="搜索商品" placeholder-class="placeholder" />
-			</view>
-		</view>
-		
 		<!-- 分类标签 -->
 		<view class="category-bar">
 			<scroll-view class="category-scroll" scroll-x>
@@ -27,17 +19,6 @@
 		
 		<!-- 商品列表 -->
 		<view class="product-section">
-			<!-- 推荐横幅 -->
-			<view class="banner-section" v-if="currentCategory === 'all'">
-				<view class="banner">
-					<image class="banner-img" src="/static/images/HomepageBackground.png" mode="aspectFill"></image>
-					<view class="banner-content">
-						<text class="banner-title">熊猫基地年卡</text>
-						<text class="banner-desc">全年无限次入园</text>
-					</view>
-				</view>
-			</view>
-			
 			<!-- 商品网格 -->
 			<view class="product-list">
 				<view 
@@ -47,7 +28,7 @@
 					@click="goProductDetail(product.id)"
 				>
 					<view class="product-image-wrapper">
-						<image class="product-image" :src="product.imageUrl || '/static/logo.png'" mode="aspectFill"></image>
+						<image class="product-image" :src="product.imageUrl || '/static/images/logo.png'" mode="widthFix"></image>
 						<view class="product-tag" v-if="product.isRecommend">
 							<text class="tag-text">推荐</text>
 						</view>
@@ -220,7 +201,7 @@ export default {
 }
 
 .category-item.active {
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 }
 
 .category-text {
@@ -298,20 +279,20 @@ export default {
 .product-image-wrapper {
 	position: relative;
 	width: 100%;
-	height: 320rpx;
-	overflow: hidden;
+	background-color: #f5f5f5;
 }
 
 .product-image {
 	width: 100%;
-	height: 100%;
+	height: auto;
+	display: block;
 }
 
 .product-tag {
 	position: absolute;
-	top: 16rpx;
+	bottom: 16rpx;
 	left: 16rpx;
-	background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+	background: linear-gradient(135deg, #f9d8ff 0%, #fd8295 100%);
 	padding: 8rpx 16rpx;
 	border-radius: 20rpx;
 }
@@ -372,7 +353,7 @@ export default {
 }
 
 .buy-tag {
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	padding: 10rpx 20rpx;
 	border-radius: 20rpx;
 }

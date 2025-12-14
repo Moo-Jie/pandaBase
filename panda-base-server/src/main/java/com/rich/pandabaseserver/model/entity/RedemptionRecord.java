@@ -55,7 +55,7 @@ public class RedemptionRecord implements Serializable {
     private Long productId;
 
     /**
-     * 商品类型 1-虚拟票证 2-实物商品
+     * 商品类型 1-年卡 2-月卡 3-次票 4-实物商品
      */
     private Integer productType;
 

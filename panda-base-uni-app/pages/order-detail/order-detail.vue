@@ -50,7 +50,7 @@
 						v-for="item in order.orderItems" 
 						:key="item.id"
 					>
-						<image class="product-img" :src="item.productImage || '/static/logo.png'" mode="aspectFill"></image>
+						<image class="product-img" :src="item.productImage || '/static/images/logo.png'" mode="aspectFill"></image>
 						<view class="product-info">
 							<text class="product-name">{{ item.productName }}</text>
 							<view class="product-bottom">
@@ -87,17 +87,21 @@
 					<text>兑换码信息</text>
 				</view>
 				<view class="redemption-list">
-					<view 
-						class="redemption-item" 
-						v-for="(code, index) in order.redemptionCodes" 
-						:key="index"
-					>
-						<view class="code-info">
-							<text class="code-label">兑换码 {{ index + 1 }}</text>
-							<text class="code-value">{{ code }}</text>
+				<view 
+					class="redemption-item" 
+					v-for="(code, index) in order.redemptionCodes" 
+					:key="index"
+				>
+					<view class="code-info">
+						<text class="code-label">兑换码 {{ index + 1 }}</text>
+						<view class="code-value-wrapper">
+							<text class="code-value">{{ showCodes[index] ? code : maskCode(code) }}</text>
+							<image class="eye-icon" :src="showCodes[index] ? '/static/images/睁眼.png' : '/static/images/闭眼.png'" mode="aspectFit" @click="toggleCode(index)"></image>
 						</view>
-						<button class="copy-btn" @click="handleCopyCode(code)" hover-class="button-hover">复制</button>
 					</view>
+
+					<button class="copy-btn" @click="handleCopyCode(code)" hover-class="button-hover">复制</button>
+				</view>
 				</view>
 				<view class="redemption-tip">
 					<text class="tip-icon">💡</text>
@@ -112,6 +116,14 @@
 			<button class="action-btn cancel-btn" @click="handleCancel" hover-class="button-hover">取消订单</button>
 			<button class="action-btn pay-btn" @click="handlePay" hover-class="button-hover">立即支付</button>
 		</view>
+		
+		<!-- 已完成订单的操作栏 -->
+		<view class="bottom-bar" v-if="order.orderStatus === 1">
+			<button class="action-btn reorder-btn" @click="handleReorder" hover-class="button-hover">
+				<text class="btn-icon">🔄</text>
+				<text>再来一单</text>
+			</button>
+		</view>
 	</view>
 </template>
 
@@ -122,7 +134,8 @@ export default {
 	data() {
 		return {
 			orderId: null,
-			order: {}
+			order: {},
+			showCodes: {}
 		}
 	},
 	onLoad(options) {
@@ -255,11 +268,43 @@ export default {
 			});
 		},
 		
-		// 跳转到兑换页面
+		// 跳转到个人中心（兑换区域）
 		handleGotoRedeem() {
-			uni.navigateTo({
-				url: '/pages/redeem/redeem'
+			uni.switchTab({
+				url: '/pages/personal/personal'
 			});
+		},
+		
+		// 再来一单
+		handleReorder() {
+			if (!this.order.orderItems || this.order.orderItems.length === 0) {
+				uni.showToast({
+					title: '订单商品信息缺失',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			// 获取第一个商品
+			const firstItem = this.order.orderItems[0];
+			
+			// 跳转到商品详情页
+			uni.navigateTo({
+				url: `/pages/product-detail/product-detail?id=${firstItem.productId}`
+			});
+		},
+		
+		// 切换兑换码显示/隐藏
+		toggleCode(index) {
+			this.showCodes[index] = !this.showCodes[index];
+			// 强制更新视图
+			this.$forceUpdate();
+		},
+		
+		// 遮罩兑换码
+		maskCode(code) {
+			if (!code || code.length <= 4) return '****';
+			return code.substring(0, 2) + '****' + code.substring(code.length - 2);
 		}
 	}
 }
@@ -543,7 +588,14 @@ export default {
 	margin-bottom: 8rpx;
 }
 
+.code-value-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
 .code-value {
+	flex: 1;
 	font-size: 28rpx;
 	color: #333333;
 	font-family: 'Courier New', monospace;
@@ -551,10 +603,17 @@ export default {
 	word-break: break-all;
 }
 
+.eye-icon {
+	width: 32rpx;
+	height: 32rpx;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
 .copy-btn {
 	width: 120rpx;
 	height: 60rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	color: #ffffff;
 	font-size: 26rpx;
 	border-radius: 30rpx;
@@ -592,7 +651,7 @@ export default {
 .goto-redeem-btn {
 	margin: 0 30rpx 20rpx;
 	height: 80rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	color: #ffffff;
 	font-size: 30rpx;
 	font-weight: bold;
@@ -640,8 +699,21 @@ export default {
 }
 
 .pay-btn {
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	color: #ffffff;
+}
+
+.reorder-btn {
+	background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.btn-icon {
+	margin-right: 8rpx;
+	font-size: 32rpx;
 }
 
 .button-hover {

@@ -4,7 +4,6 @@
 			<!-- 收货地址 -->
 			<view class="address-section">
 				<view class="section-title">
-					<text class="title-icon">📍</text>
 					<text>收货地址</text>
 				</view>
 				
@@ -22,61 +21,37 @@
 				
 				<!-- 未选择地址 -->
 				<view class="no-address" v-else @click="handleSelectAddress">
-					<text class="no-address-icon">📍</text>
 					<text class="no-address-text">请选择收货地址</text>
 					<text class="arrow">›</text>
 				</view>
 			</view>
 			
-			<!-- 商品信息 -->
-			<view class="product-section">
-				<view class="section-title">
-					<text class="title-icon">🎁</text>
-					<text>商品信息</text>
-				</view>
-				<view class="product-item">
-					<image class="product-img" :src="product.imageUrl || '/static/logo.png'" mode="aspectFill"></image>
-					<view class="product-info">
-						<view class="product-name">{{ product.name }}</view>
-						<view class="product-price">¥{{ product.price }}</view>
-					</view>
-					<view class="product-quantity">
-						<text>x {{ quantity }}</text>
-					</view>
-				</view>
+		<!-- 商品信息 -->
+		<view class="product-section">
+			<view class="section-title">
+				<text>商品信息</text>
 			</view>
-			
-			<!-- 订单金额 -->
-			<view class="amount-section">
-				<view class="section-title">
-					<text class="title-icon">💰</text>
-					<text>订单金额</text>
-				</view>
-				<view class="amount-list">
-					<view class="amount-row">
-						<text class="amount-label">商品金额</text>
-						<text class="amount-value">¥{{ product.price }}</text>
-					</view>
-					<view class="amount-row">
-						<text class="amount-label">数量</text>
-						<text class="amount-value">{{ quantity }}</text>
-					</view>
-					<view class="amount-row total">
-						<text class="amount-label">合计</text>
-						<text class="amount-value">¥{{ totalPrice }}</text>
-					</view>
-				</view>
+		<view class="product-item">
+			<image class="product-img" :src="product.imageUrl || '/static/images/logo.png'" mode="widthFix"></image>
+			<view class="product-info">
+				<view class="product-name">{{ product.name }}</view>
+				<view class="product-price">¥{{ product.price }}</view>
 			</view>
+			<view class="product-quantity">
+				<text>x {{ quantity }}</text>
+			</view>
+		</view>
+		</view>
 		</view>
 		
-		<!-- 底部按钮 -->
-		<view class="bottom-bar">
-			<view class="total-info">
-				<text class="total-label">总计：</text>
-				<text class="total-amount">¥{{ totalPrice }}</text>
-			</view>
-			<button class="pay-button" @click="handlePay" :loading="paying" :disabled="paying" hover-class="button-hover">立即购买</button>
+	<!-- 底部按钮 -->
+	<view class="bottom-bar">
+		<view class="price-info">
+			<text class="price-label">应缴金额</text>
+			<text class="price-amount">¥{{ totalPrice }}</text>
 		</view>
+		<button class="pay-button" @click="handlePay" :loading="paying" :disabled="paying" hover-class="button-hover">立即购买</button>
+	</view>
 	</view>
 </template>
 
@@ -221,7 +196,7 @@ export default {
 .page {
 	min-height: 100vh;
 	background-color: #f5f5f5;
-	padding-bottom: 140rpx;
+	padding-bottom: 200rpx;
 }
 
 .container {
@@ -231,7 +206,7 @@ export default {
 .section-title {
 	display: flex;
 	align-items: center;
-	font-size: 28rpx;
+	font-size: 35rpx;
 	font-weight: bold;
 	color: #333333;
 	padding: 20rpx 30rpx;
@@ -326,18 +301,26 @@ export default {
 	display: flex;
 	align-items: center;
 	padding: 30rpx;
+	min-height: 180rpx;
 }
 
 .product-img {
 	width: 150rpx;
-	height: 150rpx;
+	height: auto;
+	max-height: 200rpx;
 	border-radius: 12rpx;
 	margin-right: 20rpx;
 	background-color: #f5f5f5;
+	flex-shrink: 0;
+	display: block;
 }
 
 .product-info {
 	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 150rpx;
 }
 
 .product-name {
@@ -345,6 +328,7 @@ export default {
 	color: #333333;
 	font-weight: 500;
 	margin-bottom: 16rpx;
+	line-height: 1.5;
 }
 
 .product-price {
@@ -356,56 +340,8 @@ export default {
 .product-quantity {
 	font-size: 28rpx;
 	color: #666666;
-}
-
-/* 订单金额 */
-.amount-section {
-	background-color: #ffffff;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-}
-
-.amount-list {
-	padding: 20rpx 30rpx;
-}
-
-.amount-row {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 20rpx;
-	padding: 12rpx 0;
-}
-
-.amount-row:last-child {
-	margin-bottom: 0;
-}
-
-.amount-row.total {
-	padding-top: 20rpx;
-	border-top: 1rpx solid #f0f0f0;
-}
-
-.amount-label {
-	font-size: 28rpx;
-	color: #666666;
-}
-
-.amount-value {
-	font-size: 28rpx;
-	color: #333333;
-	font-weight: 500;
-}
-
-.amount-row.total .amount-label {
-	font-size: 30rpx;
-	font-weight: bold;
-	color: #333333;
-}
-
-.amount-row.total .amount-value {
-	font-size: 36rpx;
-	font-weight: bold;
-	color: #90d26c;
+	flex-shrink: 0;
+	margin-left: 20rpx;
 }
 
 /* 底部按钮 */
@@ -415,40 +351,43 @@ export default {
 	left: 0;
 	right: 0;
 	background-color: #ffffff;
-	padding: 20rpx 30rpx;
+	padding: 20rpx 30rpx 30rpx;
 	box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
+	flex-direction: column;
+	align-items: stretch;
 	z-index: 100;
 }
 
-.total-info {
-	flex: 1;
+.price-info {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	margin-bottom: 16rpx;
 }
 
-.total-label {
-	font-size: 28rpx;
-	color: #666666;
-	margin-right: 10rpx;
+.price-label {
+	font-size: 24rpx;
+	color: #333333;
+	margin-bottom: 4rpx;
 }
 
-.total-amount {
-	font-size: 36rpx;
+.price-amount {
+	font-size: 40rpx;
 	font-weight: bold;
-	color: #90d26c;
+	color: #297512;
 }
 
 .pay-button {
-	width: 280rpx;
-	height: 80rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
-	border-radius: 40rpx;
+	width: 100%;
+	height: 88rpx;
+	background: linear-gradient(135deg, #2b4509 0%, #1e4a13 100%);
+	border-radius: 44rpx;
 	font-size: 32rpx;
 	font-weight: bold;
 	color: #ffffff;
 	border: none;
-	line-height: 80rpx;
+	line-height: 88rpx;
 	padding: 0;
 }
 

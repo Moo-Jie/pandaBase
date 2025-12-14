@@ -42,6 +42,13 @@
 							<text class="value tracking-text">{{ record.trackingNumber }}</text>
 						</view>
 					</view>
+					
+					<!-- 查看详情按钮 -->
+					<view class="item-footer">
+						<button class="detail-btn" @click="viewRecordDetail(record)" hover-class="detail-btn-hover">
+							使用/查看详情
+						</button>
+					</view>
 				</view>
 			</view>
 			
@@ -148,8 +155,18 @@ export default {
 		
 		// 跳转到兑换页面
 		handleGotoRedeem() {
+			uni.switchTab({
+				url: '/pages/personal/personal'
+			});
+		},
+		
+		// 查看兑换记录详情
+		viewRecordDetail(record) {
+			if (!record) return;
+			
+			// 跳转到详情页面
 			uni.navigateTo({
-				url: '/pages/redeem/redeem'
+				url: '/pages/redemption-detail/redemption-detail?data=' + encodeURIComponent(JSON.stringify(record))
 			});
 		}
 	}
@@ -310,7 +327,7 @@ export default {
 .goto-redeem-btn {
 	width: 240rpx;
 	height: 72rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	color: #ffffff;
 	font-size: 28rpx;
 	font-weight: bold;
@@ -325,5 +342,34 @@ export default {
 
 .button-hover {
 	opacity: 0.85;
+}
+
+/* 查看详情按钮 */
+.item-footer {
+	padding: 0 24rpx 24rpx;
+	display: flex;
+	justify-content: center;
+}
+
+.detail-btn {
+	width: 100%;
+	height: 76rpx;
+	background-color: #ffffff;
+	color: #297512;
+	font-size: 30rpx;
+	font-weight: bold;
+	border-radius: 12rpx;
+	border: 2rpx solid #297512;
+	line-height: 76rpx;
+	text-align: center;
+}
+
+.detail-btn::after {
+	border: none;
+}
+
+.detail-btn-hover {
+	background-color: #f0f9f0;
+	opacity: 0.9;
 }
 </style>

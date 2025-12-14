@@ -56,7 +56,7 @@ public class Product implements Serializable {
     private String imageUrl;
 
     /**
-     * 商品类型 1-年卡 2-月卡 3-次票 4-实物商品 5-组合商品
+     * 商品类型 1-年卡 2-月卡 3-次票 4-实物商品
      */
     private Integer type;
 

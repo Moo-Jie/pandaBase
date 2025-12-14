@@ -35,3 +35,17 @@ public class RedeemRequest implements Serializable {
     private Long userId;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

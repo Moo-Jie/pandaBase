@@ -1,56 +1,44 @@
 <template>
 	<view class="page">
-		<view class="container" v-if="cardList.length > 0">
-			<!-- 会员卡列表 -->
-			<view class="card-list">
-				<view 
-					class="membership-card" 
-					v-for="card in cardList" 
-					:key="card.id"
-					:class="getCardClass(card.cardType, card.status)"
-					@click="viewCardDetail(card)"
+		<view class="container" v-if="productList.length > 0">
+			<!-- 商品列表 -->
+			<view class="product-list">
+				<view
+					class="product-card"
+					v-for="item in productList" 
+					:key="item.id + '-' + item.type"
+					@click="handleProductClick(item)"
 				>
-					<!-- 卡片头部 -->
-					<view class="card-header">
-						<view class="card-type">
-							<text class="type-icon">{{ getCardIcon(card.cardType) }}</text>
-							<text class="type-text">{{ card.cardTypeText }}</text>
+					<!-- 背景图片 -->
+					<image class="card-bg-image" :src="item.imageUrl || '/static/images/logo.png'" mode="widthFix"></image>
+					
+					<!-- 卡片内容 -->
+					<view class="card-content">
+						<!-- 头部信息 -->
+						<view class="content-header">
+							<text class="product-name">名称：{{ item.name }}</text>
 						</view>
-						<view class="card-status" :class="getStatusClass(card.status)">
-							<text>{{ card.statusText }}</text>
+						
+						<!-- 底部信息 -->
+						<view class="content-footer">
+							<text class="product-type">类型：{{ item.typeText }}</text>
+							<!-- 有效期标签（会员卡） -->
+							<text class="validity-date" v-if="item.type <= 3 && item.endTime">至 {{ formatDate(item.endTime) }}</text>
+							<!-- 次票显示剩余次数 -->
+							<text class="remain-count" v-if="item.type === 3">剩余 {{ item.remainCount }} 次</text>
+							<!-- 实体商品显示数量 -->
+							<text class="quantity" v-if="item.type === 4">x{{ item.quantity }}</text>
 						</view>
 					</view>
-					
-					<!-- 卡片主体 -->
-					<view class="card-body">
-						<text class="card-number">{{ card.cardNumber }}</text>
-						<text class="product-name">{{ card.productName }}</text>
-					</view>
-					
-					<!-- 卡片底部 -->
-					<view class="card-footer">
-						<view class="validity-info" v-if="card.cardType !== 3">
-							<text class="label">有效期至：</text>
-							<text class="value">{{ formatDate(card.endTime) }}</text>
-							<text class="remain" v-if="card.status === 1">（剩余{{ card.remainDays }}天）</text>
-						</view>
-						<view class="validity-info" v-else>
-							<text class="label">剩余次数：</text>
-							<text class="value">{{ card.remainCount }}/{{ card.totalCount }}</text>
-						</view>
-					</view>
-					
-					<!-- 装饰元素 -->
-					<view class="card-decoration"></view>
 				</view>
 			</view>
 		</view>
 		
 		<!-- 空状态 -->
 		<view class="empty-state" v-else-if="!loading">
-			<text class="empty-icon">💳</text>
-			<text class="empty-text">暂无会员卡</text>
-			<text class="empty-tip">购买年卡或月卡后将在此显示</text>
+			<text class="empty-icon">🎁</text>
+			<text class="empty-text">暂无商品</text>
+			<text class="empty-tip">购买或兑换商品后将在此显示</text>
 			<button class="go-mall-btn" @click="goMall">去商城看看</button>
 		</view>
 		
@@ -62,59 +50,36 @@
 </template>
 
 <script>
-import { getMyMembershipCards } from '../../api/membershipCard.js';
-
+import { get } from '../../utils/request.js';
 export default {
 	data() {
 		return {
-			cardList: [],
+			productList: [],
 			loading: false
 		}
 	},
 	onLoad() {
-		this.loadCards();
+		this.loadProducts();
 	},
 	onShow() {
 		// 每次显示时刷新
-		this.loadCards();
+		this.loadProducts();
 	},
 	methods: {
-		// 加载会员卡列表
-		async loadCards() {
+		// 加载所有商品（会员卡 + 实体商品）
+		async loadProducts() {
 			this.loading = true;
 			try {
-				const result = await getMyMembershipCards();
-				this.cardList = result || [];
+				const result = await get('/userProduct/my/list', {});
+				this.productList = result || [];
 			} catch (error) {
-				console.error('加载会员卡失败:', error);
-				this.cardList = [];
+				console.error('加载商品失败:', error);
+				this.productList = [];
 			} finally {
 				this.loading = false;
 			}
 		},
-		
-		// 获取卡片类型对应的类名
-		getCardClass(cardType, status) {
-			let typeClass = '';
-			switch(cardType) {
-				case 1:
-					typeClass = 'year-card';
-					break;
-				case 2:
-					typeClass = 'month-card';
-					break;
-				case 3:
-					typeClass = 'ticket-card';
-					break;
-			}
-			
-			if (status === 2 || status === 3) {
-				typeClass += ' disabled';
-			}
-			
-			return typeClass;
-		},
-		
+
 		// 获取卡片图标
 		getCardIcon(cardType) {
 			switch(cardType) {
@@ -155,13 +120,37 @@ export default {
 			return `${year}-${month}-${day}`;
 		},
 		
-		// 查看卡片详情
-		viewCardDetail(card) {
-			uni.showModal({
-				title: card.cardTypeText,
-				content: `卡号：${card.cardNumber}\n状态：${card.statusText}\n${card.cardType !== 3 ? '有效期至：' + this.formatDate(card.endTime) : '剩余次数：' + card.remainCount}`,
-				showCancel: false
-			});
+		// 处理商品点击
+		handleProductClick(item) {
+			if (item.type === 4) {
+				// 实体商品：提示联系客服
+				const content = `|商品名称：${item.name}\n\n|商品数量：${item.quantity} 件\n\n| 核销方式：\n请联系客服出示当前凭证进行线下兑换\n\n| 客服热线：400-656-00555`;
+				
+				uni.showModal({
+					title: '实体商品详情',
+					content: content,
+					confirmText: '我知道了',
+					showCancel: false
+				});
+			} else {
+				// 会员卡：显示详情
+				const emoji = item.type === 1 ? '👑' : item.type === 2 ? '💎' : '🎫';
+				let content = `|会员卡号：\n${item.cardNumber || '暂无'}\n\n`;
+				content += `|当前状态：${item.statusText}\n\n`;
+				
+				if (item.type === 3) {
+					content += `|剩余次数：${item.remainCount} 次`;
+				} else {
+					content += `|有效期至：\n${this.formatDate(item.endTime)}`;
+				}
+				
+				uni.showModal({
+					title: `${emoji} ${item.name}`,
+					content: content,
+					confirmText: '我知道了',
+					showCancel: false
+				});
+			}
 		},
 		
 		// 去商城
@@ -184,72 +173,104 @@ export default {
 	padding: 30rpx;
 }
 
-.card-list {
+.product-list {
 	display: flex;
 	flex-direction: column;
-	gap: 30rpx;
+	gap: 24rpx;
 }
 
-/* 会员卡片 */
-.membership-card {
+.product-card {
 	position: relative;
-	padding: 40rpx 30rpx;
-	border-radius: 20rpx;
-	box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.12);
+	border-radius: 24rpx;
 	overflow: hidden;
+	box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
+	transition: transform 0.2s;
 }
 
-/* 年卡 - 金色渐变 */
-.year-card {
-	background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+.product-card:active {
+	transform: scale(0.98);
 }
 
-/* 月卡 - 银色渐变 */
-.month-card {
-	background: linear-gradient(135deg, #e0e0e0 0%, #c9d6df 100%);
+/* 背景图片 */
+.card-bg-image {
+	width: 100%;
+	height: auto;
+	display: block;
 }
 
-/* 次票 - 蓝色渐变 */
-.ticket-card {
-	background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-/* 已过期/已作废 */
-.membership-card.disabled {
-	opacity: 0.6;
-	filter: grayscale(100%);
-}
-
-.card-decoration {
+/* 遮罩层 */
+.card-overlay {
 	position: absolute;
-	top: -40rpx;
-	right: -40rpx;
-	width: 200rpx;
-	height: 200rpx;
-	background: rgba(255, 255, 255, 0.1);
-	border-radius: 50%;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+	z-index: 1;
 }
 
-/* 卡片头部 */
-.card-header {
+/* 内容层 */
+.card-content {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 2;
+	padding: 24rpx 30rpx;
+	display: flex;
+	flex-direction: column;
+	gap: 16rpx;
+}
+
+.content-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	margin-bottom: 30rpx;
 }
 
-.card-type {
+.product-name {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #ffffff;
+	text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.6);
+	flex: 1;
+	margin-right: 16rpx;
+}
+
+.content-footer {
 	display: flex;
+	justify-content: space-between;
 	align-items: center;
 }
 
-.type-icon {
-	font-size: 40rpx;
-	margin-right: 12rpx;
+.product-type {
+	font-size: 26rpx;
+	color: rgba(255, 255, 255, 0.95);
+	text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.5);
+	font-weight: 500;
 }
 
-.type-text {
-	font-size: 32rpx;
+.validity-date, .remain-count, .quantity {
+	font-size: 28rpx;
+	color: #ffffff;
+	font-weight: bold;
+	text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.6);
+	background: rgba(255, 255, 255, 0.2);
+	padding: 8rpx 20rpx;
+	border-radius: 24rpx;
+	backdrop-filter: blur(10rpx);
+}
+
+/* 已过期/已作废/已核销 */
+.product-card.disabled {
+	opacity: 0.6;
+}
+
+/* 商品状态标签 */
+.product-status {
+	padding: 6rpx 16rpx;
+	border-radius: 20rpx;
+	font-size: 22rpx;
 	font-weight: bold;
 	color: #ffffff;
 }
@@ -349,7 +370,7 @@ export default {
 .go-mall-btn {
 	width: 300rpx;
 	height: 80rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	border-radius: 40rpx;
 	font-size: 28rpx;
 	color: #ffffff;
@@ -374,5 +395,12 @@ export default {
 	color: #999999;
 }
 </style>
+
+
+
+
+
+
+
 
 

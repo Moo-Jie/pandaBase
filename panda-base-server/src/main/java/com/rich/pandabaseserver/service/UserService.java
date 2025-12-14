@@ -17,13 +17,7 @@ import java.util.List;
  */
 public interface UserService extends IService<User> {
 
-    long userRegister(String account, String password, String checkPassword);
-
-    long userRegisterWithPhone(String phone, String nickname, String password, String checkPassword);
-
     LoginUserVO getLoginUserVO(User user);
-
-    LoginUserVO userLogin(String account, String password, HttpServletRequest request);
 
     User getLoginUser(HttpServletRequest request);
 
@@ -36,4 +30,6 @@ public interface UserService extends IService<User> {
     QueryWrapper getQueryWrapper(UserQueryRequest userQueryRequest);
 
     String getEncryptPassword(String password);
+
+    LoginUserVO wxLogin(String code, String nickname, String avatarUrl, HttpServletRequest request);
 }

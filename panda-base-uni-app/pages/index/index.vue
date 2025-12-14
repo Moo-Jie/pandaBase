@@ -27,32 +27,31 @@
           </view>
         </swiper-item>
       </swiper>
+      
+      <!-- 熊猫写实图片 -->
+      <image class="panda-real-image" src="/static/images/熊猫写实.png" mode="aspectFit"></image>
     </view>
 
-    <!-- 会员卡展示 - 固定底部，左右分布 -->
+    <!-- 会员卡展示 - 固定底部，左右分布，纯图片 -->
     <view class="cards-section">
       <!-- 年卡 -->
-      <view class="card-item" v-if="yearCard" @click="handleBuy(yearCard)">
-        <image class="card-image" src="/static/images/年卡VIP.png" mode="aspectFill"></image>
-        <view class="card-overlay">
-          <view class="card-info">
-            <text class="card-name">{{ yearCard.name }}</text>
-            <text class="card-price">¥{{ yearCard.price }}</text>
-          </view>
-          <button class="buy-btn" hover-class="button-hover">购买</button>
+      <view class="card-container" v-if="yearCard">
+        <view class="card-item" @click="handleCardClick(yearCard)">
+          <image class="card-image" src="/static/images/年卡VIP.png" mode="widthFix"></image>
         </view>
+        <button class="buy-btn" @click="handleCardClick(yearCard)" hover-class="button-hover">
+          立即购买
+        </button>
       </view>
 
       <!-- 月卡 -->
-      <view class="card-item" v-if="monthCard" @click="handleBuy(monthCard)">
-        <image class="card-image" src="/static/images/月卡VIP.png" mode="aspectFill"></image>
-        <view class="card-overlay">
-          <view class="card-info">
-            <text class="card-name">{{ monthCard.name }}</text>
-            <text class="card-price">¥{{ monthCard.price }}</text>
-          </view>
-          <button class="buy-btn" hover-class="button-hover">购买</button>
+      <view class="card-container" v-if="monthCard">
+        <view class="card-item" @click="handleCardClick(monthCard)">
+          <image class="card-image" src="/static/images/月卡VIP.png" mode="widthFix"></image>
         </view>
+        <button class="buy-btn" @click="handleCardClick(monthCard)" hover-class="button-hover">
+          立即购买
+        </button>
       </view>
     </view>
 
@@ -172,28 +171,8 @@ export default {
       }
     },
 
-    // 处理购买点击
-    handleBuy(product) {
-      // 检查是否登录
-      if (!isLoggedIn()) {
-        // 未登录，跳转到登录页
-        uni.showModal({
-          title: '提示',
-          content: '购买商品需要先登录',
-          confirmText: '去登录',
-          cancelText: '取消',
-          success: (res) => {
-            if (res.confirm) {
-              uni.navigateTo({
-                url: '/pages/login/login?redirect=/pages/product-detail/product-detail&productId=' + product.id
-              });
-            }
-          }
-        });
-        return;
-      }
-
-      // 已登录，跳转到商品详情页
+    // 处理卡片点击 - 直接跳转到商品详情页
+    handleCardClick(product) {
       uni.navigateTo({
         url: `/pages/product-detail/product-detail?id=${product.id}`
       });
@@ -220,7 +199,7 @@ export default {
   width: 100%;
   height: 100%;
   z-index: 0;
-  opacity: 0.3;
+  opacity: 1;
 }
 
 /* 顶部欢迎区域 */
@@ -294,86 +273,69 @@ export default {
   text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
 }
 
+.panda-real-image {
+  position: absolute;
+  top: -260rpx;
+  right: 20rpx;
+  width: 300rpx;
+  height: 300rpx;
+  z-index: 10;
+}
+
 /* 占位空间，推送底部内容 */
 .spacer {
-  flex: 0.8;
+  flex: 0.9;
   min-height: 40rpx;
 }
 
-/* 会员卡展示区域 - 固定底部，左右分布 */
+/* 会员卡展示区域 - 固定底部，左右分布，纯白色背景 */
 .cards-section {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: row;
   gap: 20rpx;
-  padding: 0 30rpx 30rpx;
-  margin-bottom: env(safe-area-inset-bottom);
+  padding: 20rpx 16rpx;
+  background-color: #ffffff;
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  margin: 0 20rpx env(safe-area-inset-bottom);
 }
+
+.card-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
 
 .card-item {
   position: relative;
-  flex: 1;
-  height: 400rpx;
-  border-radius: 16rpx;
-  overflow: hidden;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
+}
+
+.card-item:active {
+  transform: scale(0.95);
 }
 
 .card-image {
   width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.card-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.3) 70%, transparent 100%);
-  padding: 24rpx 20rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.card-info {
-  width: 100%;
-  text-align: center;
-}
-
-.card-name {
+  height: auto;
   display: block;
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #ffffff;
-  margin-bottom: 8rpx;
-  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.5);
-}
-
-.card-price {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #ffffff;
-  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.5);
 }
 
 .buy-btn {
-  width: 120rpx;
-  height: 56rpx;
-  background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #297512 0%, #3d8b1f 100%);
   color: #ffffff;
-  border-radius: 28rpx;
-  font-size: 24rpx;
+  font-size: 32rpx;
   font-weight: bold;
+  border-radius: 44rpx;
   border: none;
-  line-height: 56rpx;
-  padding: 0;
-  box-shadow: 0 4rpx 8rpx rgba(144, 210, 108, 0.5);
+  line-height: 88rpx;
+  box-shadow: 0 4rpx 12rpx rgba(86, 171, 47, 0.3);
 }
 
 .buy-btn::after {
@@ -382,7 +344,7 @@ export default {
 
 .button-hover {
   opacity: 0.85;
-  transform: scale(0.95);
+  transform: scale(0.98);
 }
 
 /* 空状态 */

@@ -59,7 +59,7 @@
 		{
 			"path": "pages/my-cards/my-cards",
 			"style": {
-				"navigationBarTitleText": "我的会员卡",
+				"navigationBarTitleText": "已有商品",
 				"navigationBarBackgroundColor": "#ffffff",
 				"navigationBarTextStyle": "black"
 			}
@@ -97,6 +97,14 @@
 			}
 		},
 		{
+			"path": "pages/redemption-detail/redemption-detail",
+			"style": {
+				"navigationBarTitleText": "兑换详情",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
 			"path": "pages/address-list/address-list",
 			"style": {
 				"navigationBarTitleText": "地址管理",
@@ -108,6 +116,14 @@
 			"path": "pages/address-edit/address-edit",
 			"style": {
 				"navigationBarTitleText": "编辑地址",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/export-report/export-report",
+			"style": {
+				"navigationBarTitleText": "导出报表",
 				"navigationBarBackgroundColor": "#ffffff",
 				"navigationBarTextStyle": "black"
 			}

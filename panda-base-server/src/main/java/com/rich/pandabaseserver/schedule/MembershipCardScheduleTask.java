@@ -20,9 +20,9 @@ public class MembershipCardScheduleTask {
 
     /**
      * 自动处理过期会员卡
-     * 每天凌晨1点执行
+     * 每 10 分钟执行一次
      */
-    @Scheduled(cron = "0 0 1 * * ?")
+    @Scheduled(cron = "0 */10 * * * ?")
     public void autoExpireCards() {
         log.info("开始执行会员卡过期自动处理定时任务");
         try {

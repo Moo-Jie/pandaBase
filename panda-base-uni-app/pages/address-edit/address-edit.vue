@@ -24,11 +24,9 @@
 					<text>所在地区</text>
 				</view>
 				<picker 
-					mode="multiSelector" 
-					:range="regionColumns" 
-					:value="regionIndexes" 
+					mode="region" 
+					:value="regionArray"
 					@change="handleRegionChange"
-					@columnchange="handleColumnChange"
 				>
 					<view class="region-picker">
 						<text class="region-text" v-if="regionText">{{ regionText }}</text>
@@ -69,12 +67,6 @@
 
 <script>
 import { addAddress } from '../../api/address.js';
-import { 
-	regionData, 
-	getRegionColumns, 
-	getCitiesByProvinceIndex, 
-	getDistrictsByIndex 
-} from '../../utils/region-data.js';
 
 export default {
 	data() {
@@ -88,52 +80,21 @@ export default {
 				detailAddress: '',
 				isDefault: false
 			},
-			regionColumns: getRegionColumns(), // [省列表, 市列表, 区列表]
-			regionIndexes: [0, 0, 0], // [省索引, 市索引, 区索引]
+			regionArray: [], // 微信原生地区选择器的值 [省, 市, 区]
 			regionText: '',
 			saving: false
 		}
 	},
 	methods: {
-		// 列变化事件（用户滚动选择器某一列时触发）
-		handleColumnChange(e) {
-			const { column, value } = e.detail;
-			const indexes = [...this.regionIndexes];
-			indexes[column] = value;
-			
-			// 如果改变的是省，更新市和区的数据
-			if (column === 0) {
-				indexes[1] = 0;
-				indexes[2] = 0;
-				const cities = getCitiesByProvinceIndex(value);
-				const districts = getDistrictsByIndex(value, 0);
-				this.$set(this.regionColumns, 1, cities);
-				this.$set(this.regionColumns, 2, districts);
-			}
-			// 如果改变的是市，更新区的数据
-			else if (column === 1) {
-				indexes[2] = 0;
-				const districts = getDistrictsByIndex(indexes[0], value);
-				this.$set(this.regionColumns, 2, districts);
-			}
-			
-			this.regionIndexes = indexes;
-		},
-		
-		// 地区选择完成
+		// 地区选择完成（使用微信原生组件）
 		handleRegionChange(e) {
-			const indexes = e.detail.value;
-			this.regionIndexes = indexes;
+			const region = e.detail.value; // [省, 市, 区]
+			this.regionArray = region;
 			
-			// 根据索引获取对应的省市区名称
-			const province = this.regionColumns[0][indexes[0]];
-			const city = this.regionColumns[1][indexes[1]];
-			const district = this.regionColumns[2][indexes[2]];
-			
-			this.form.province = province;
-			this.form.city = city;
-			this.form.district = district;
-			this.regionText = `${province} ${city} ${district}`;
+			this.form.province = region[0];
+			this.form.city = region[1];
+			this.form.district = region[2];
+			this.regionText = `${region[0]} ${region[1]} ${region[2]}`;
 		},
 		
 		// 默认地址切换
@@ -312,7 +273,7 @@ export default {
 .save-btn {
 	width: 100%;
 	height: 88rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	border-radius: 44rpx;
 	font-size: 32rpx;
 	font-weight: bold;
@@ -380,7 +341,7 @@ export default {
 .add-btn {
 	width: 100%;
 	height: 88rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	border-radius: 44rpx;
 	font-size: 30rpx;
 	font-weight: bold;

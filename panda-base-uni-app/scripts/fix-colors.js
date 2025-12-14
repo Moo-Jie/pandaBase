@@ -9,14 +9,14 @@ const path = require('path');
 // 颜色替换映射表
 const colorMap = {
   // 紫色渐变 -> 绿色渐变
-  'linear-gradient\\(135deg, #667eea 0%, #764ba2 100%\\)': 'linear-gradient(135deg, #a8e063 0%, #56ab2f 100%)',
+  'linear-gradient\\(135deg, #667eea 0%, #764ba2 100%\\)': 'linear-gradient(135deg, #a8e063 0%, #297512 100%)',
   '#667eea': '#90d26c',
-  '#764ba2': '#56ab2f',
+  '#764ba2': '#297512',
   
   // 粉色渐变 -> 绿色渐变
-  'linear-gradient\\(135deg, #f093fb 0%, #f5576c 100%\\)': 'linear-gradient(135deg, #a8e063 0%, #56ab2f 100%)',
+  'linear-gradient\\(135deg, #f093fb 0%, #f5576c 100%\\)': 'linear-gradient(135deg, #a8e063 0%, #297512 100%)',
   '#f093fb': '#90d26c',
-  '#f5576c': '#56ab2f',
+  '#f5576c': '#297512',
   
   // 蓝色渐变 -> 灰色渐变
   'linear-gradient\\(135deg, #4facfe 0%, #00f2fe 100%\\)': 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
@@ -24,14 +24,14 @@ const colorMap = {
   '#00f2fe': '#e0e0e0',
   
   // 青色渐变 -> 绿色渐变
-  'linear-gradient\\(135deg, #43e97b 0%, #38f9d7 100%\\)': 'linear-gradient(135deg, #a8e063 0%, #56ab2f 100%)',
+  'linear-gradient\\(135deg, #43e97b 0%, #38f9d7 100%\\)': 'linear-gradient(135deg, #a8e063 0%, #297512 100%)',
   '#43e97b': '#90d26c',
-  '#38f9d7': '#56ab2f',
+  '#38f9d7': '#297512',
   
   // 橙粉渐变 -> 绿色渐变
-  'linear-gradient\\(135deg, #fa709a 0%, #fee140 100%\\)': 'linear-gradient(135deg, #a8e063 0%, #56ab2f 100%)',
+  'linear-gradient\\(135deg, #fa709a 0%, #fee140 100%\\)': 'linear-gradient(135deg, #a8e063 0%, #297512 100%)',
   '#fa709a': '#90d26c',
-  '#fee140': '#56ab2f',
+  '#fee140': '#297512',
   
   // 红色 -> 绿色
   '#ff4444': '#90d26c',

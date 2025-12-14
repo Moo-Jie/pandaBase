@@ -1,0 +1,53 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/mall/mall",
+    "pages/personal/personal",
+    "pages/product-detail/product-detail",
+    "pages/confirm-order/confirm-order",
+    "pages/login/login",
+    "pages/payment/payment",
+    "pages/my-cards/my-cards",
+    "pages/my-orders/my-orders",
+    "pages/order-detail/order-detail",
+    "pages/redeem/redeem",
+    "pages/redemption-records/redemption-records",
+    "pages/redemption-detail/redemption-detail",
+    "pages/address-list/address-list",
+    "pages/address-edit/address-edit",
+    "pages/export-report/export-report"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "熊猫基地",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f8f8f8"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#90d26c",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/images/bottomNavigatiBar/homePage.png",
+        "selectedIconPath": "static/images/bottomNavigatiBar/homePage.png"
+      },
+      {
+        "pagePath": "pages/mall/mall",
+        "text": "商城",
+        "iconPath": "static/images/bottomNavigatiBar/mallPage.png",
+        "selectedIconPath": "static/images/bottomNavigatiBar/mallPage.png"
+      },
+      {
+        "pagePath": "pages/personal/personal",
+        "text": "个人中心",
+        "iconPath": "static/images/bottomNavigatiBar/PersonalCenterPage.png",
+        "selectedIconPath": "static/images/bottomNavigatiBar/PersonalCenterPage.png"
+      }
+    ]
+  },
+  "usingComponents": {}
+}

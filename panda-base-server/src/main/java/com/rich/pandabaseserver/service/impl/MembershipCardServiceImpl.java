@@ -210,31 +210,32 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
 
     @Override
     public void autoExpireCards() {
-        // 查询所有已激活但已过期的会员卡
+        // 查询所有已激活但已过期的年卡和月卡
         QueryWrapper queryWrapper = QueryWrapper.create()
                 .where("status = ?", 1)
-                .and("end_time < ?", LocalDateTime.now());
+                .and("end_time < ?", LocalDateTime.now())
+                .and("card_type IN (?, ?)", 1, 2); // 1-年卡, 2-月卡
 
         List<MembershipCard> expiredCards = this.list(queryWrapper);
 
         if (expiredCards == null || expiredCards.isEmpty()) {
-            log.info("没有需要处理的过期会员卡");
+            log.info("没有需要处理的过期年卡/月卡");
             return;
         }
 
-        log.info("开始处理过期会员卡，共{}张", expiredCards.size());
+        log.info("开始处理过期年卡/月卡，共{}张", expiredCards.size());
 
-        // 批量更新为过期状态
+        // 批量更新为已作废状态（状态3）
         for (MembershipCard card : expiredCards) {
-            card.setStatus(2);
+            card.setStatus(3); // 3-已作废
             card.setUpdateTime(LocalDateTime.now());
         }
 
         boolean updateResult = this.updateBatch(expiredCards);
         if (updateResult) {
-            log.info("过期会员卡处理完成，共更新{}张", expiredCards.size());
+            log.info("过期年卡/月卡处理完成，共更新{}张为已作废状态", expiredCards.size());
         } else {
-            log.error("过期会员卡批量更新失败");
+            log.error("过期年卡/月卡批量更新失败");
         }
     }
 }

@@ -1,7 +1,10 @@
 package com.rich.pandabaseserver.service.impl;
 
+import cn.binarywang.wx.miniapp.api.WxMaService;
+import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
@@ -13,8 +16,11 @@ import com.rich.pandabaseserver.mapper.UserMapper;
 import com.rich.pandabaseserver.model.enums.UserRoleEnum;
 import com.rich.pandabaseserver.model.vo.LoginUserVO;
 import com.rich.pandabaseserver.model.vo.UserVO;
+import com.rich.pandabaseserver.service.LocalFileStorageService;
 import com.rich.pandabaseserver.service.UserService;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
@@ -31,126 +37,14 @@ import static com.rich.pandabaseserver.constant.UserConstant.USER_LOGIN_STATE;
  *
  * @author @author DuRuiChi
  */
+@Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+    
+    @Resource
+    private WxMaService wxMaService;
     // 加密盐值
     private static final String PASSWORD_SALT = "rich";
-    // 最小账号长度
-    private static final int MIN_ACCOUNT_LENGTH = 4;
-    // 最小密码长度
-    private static final int MIN_PASSWORD_LENGTH = 8;
-    // 默认用户名
-    private static final String DEFAULT_USER_NAME = "无名";
-
-    /**
-     * 用户注册（旧版，保留兼容）
-     *
-     * @param account   用户账号
-     * @param password  用户密码
-     * @param checkPassword 确认密码
-     * @return 新注册用户的ID
-     * @throws BusinessException 参数错误或业务异常
-     **/
-    @Override
-    public long userRegister(String account, String password, String checkPassword) {
-        // 1. 参数基础校验
-        validateAccount(account);
-        validatePassword(password, checkPassword);
-
-        // 2. 检查账号唯一性
-        checkAccountUnique(account);
-
-        // 3. 密码加密存储
-        String encryptPassword = encryptPassword(password);
-
-        // 4. 构建用户对象并存储
-        User user = new User();
-        user.setAccount(account);
-        user.setPassword(encryptPassword);
-        user.setNickname(DEFAULT_USER_NAME);
-        user.setRole(UserRoleEnum.USER.getValue());
-
-        if (!this.save(user)) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "用户注册失败");
-        }
-        return user.getId();
-    }
-
-    /**
-     * 用户注册（手机号+昵称版）
-     *
-     * @param phone 手机号
-     * @param nickname 昵称
-     * @param password 密码
-     * @param checkPassword 确认密码
-     * @return 新注册用户的ID
-     */
-    @Override
-    public long userRegisterWithPhone(String phone, String nickname, String password, String checkPassword) {
-        // 1. 校验手机号
-        if (StrUtil.isBlank(phone)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号不能为空");
-        }
-        if (!phone.matches("^1[3-9]\\d{9}$")) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号格式不正确");
-        }
-
-        // 2. 校验昵称
-        if (StrUtil.isBlank(nickname)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "昵称不能为空");
-        }
-        if (nickname.length() > 20) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "昵称长度不能超过20个字符");
-        }
-
-        // 3. 校验密码
-        if (StrUtil.hasBlank(password, checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码不能为空");
-        }
-        if (password.length() < 6) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码长度至少为6位");
-        }
-        if (!password.equals(checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
-        }
-
-        // 4. 检查手机号唯一性
-        QueryWrapper phoneQuery = QueryWrapper.create()
-                .eq("phone", phone)
-                .select("id");
-        if (mapper.selectCountByQuery(phoneQuery) > 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号已被注册");
-        }
-
-        // 5. 检查账号唯一性（账号=手机号）
-        QueryWrapper accountQuery = QueryWrapper.create()
-                .eq("account", phone)
-                .select("id");
-        if (mapper.selectCountByQuery(accountQuery) > 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "该手机号已被注册");
-        }
-
-        // 6. 密码加密
-        String encryptPassword = encryptPassword(password);
-
-        // 7. 构建用户对象
-        User user = new User();
-        user.setAccount(phone); // 账号=手机号
-        user.setPhone(phone);
-        user.setNickname(nickname);
-        user.setPassword(encryptPassword);
-        user.setRole(UserRoleEnum.USER.getValue());
-        user.setIsAnonymous(false); // 非匿名用户
-        user.setStatus(true); // 正常状态
-        // 生成默认openid（后续接入微信登录时替换）
-        user.setOpenid("LOCAL_" + System.currentTimeMillis() + "_" + phone);
-
-        if (!this.save(user)) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "用户注册失败");
-        }
-
-        return user.getId();
-    }
 
     /**
      * 构造登录用户视图对象
@@ -170,33 +64,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return loginUserVO;
     }
 
-    /**
-     * 用户登录
-     *
-     * @param account  用户账号
-     * @param password 用户密码
-     * @param request      HTTP请求对象
-     * @return 脱敏后的登录用户信息
-     * @throws BusinessException 参数错误或认证失败
-     * @author DuRuiChi
-     * @create 2025/8/5
-     **/
-    @Override
-    public LoginUserVO userLogin(String account, String password, HttpServletRequest request) {
-        // 1. 参数基础校验
-        validateAccount(account);
-        if (StrUtil.isBlank(password)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码不能为空");
-        }
-
-        // 2. 密码加密并验证
-        String encryptPassword = encryptPassword(password);
-        User user = validateUserCredentials(account, encryptPassword);
-
-        // 3. 存储登录状态并返回脱敏信息
-        request.getSession().setAttribute(USER_LOGIN_STATE, user);
-        return getLoginUserVO(user);
-    }
 
     /**
      * 获取当前登录用户
@@ -352,80 +219,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
-     * 验证用户账号合规性
-     *
-     * @param account
-     * @return void
-     * @author DuRuiChi
-     * @create 2025/8/5
-     **/
-    private void validateAccount(String account) {
-        if (StrUtil.isBlank(account)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号不能为空");
-        }
-        if (account.length() < MIN_ACCOUNT_LENGTH) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,
-                    String.format("账号长度至少为%d位", MIN_ACCOUNT_LENGTH));
-        }
-    }
-
-    /**
-     * 验证密码合规性
-     *
-     * @param password
-     * @param checkPassword
-     * @return void
-     * @author DuRuiChi
-     * @create 2025/8/5
-     **/
-    private void validatePassword(String password, String checkPassword) {
-        if (StrUtil.hasBlank(password, checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码不能为空");
-        }
-        if (password.length() < MIN_PASSWORD_LENGTH || checkPassword.length() < MIN_PASSWORD_LENGTH) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,
-                    String.format("密码长度至少为%d位", MIN_PASSWORD_LENGTH));
-        }
-        if (!password.equals(checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
-        }
-    }
-
-    /**
-     * 检查账号唯一性
-     *
-     * @param account
-     * @return void
-     * @author DuRuiChi
-     * @create 2025/8/5
-     **/
-    private void checkAccountUnique(String account) {
-        QueryWrapper queryWrapper = QueryWrapper.create()
-                .eq("account", account)
-                .select("id");
-        if (mapper.selectCountByQuery(queryWrapper) > 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号已被注册");
-        }
-    }
-
-    /**
-     * 验证用户凭证
-     *
-     * @param account
-     * @param encryptedPassword
-     * @return com.rich.pandabaseserver.model.entity.User
-     * @author DuRuiChi
-     * @create 2025/8/5
-     **/
-    private User validateUserCredentials(String account, String encryptedPassword) {
-        QueryWrapper queryWrapper = QueryWrapper.create()
-                .eq("account", account)
-                .eq("password", encryptedPassword);
-        return this.getOneOpt(queryWrapper)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PARAMS_ERROR, "账号或密码错误"));
-    }
-
-    /**
      * 安全获取用户信息（Optional包装）
      *
      * @param id
@@ -439,17 +232,108 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
-     * 密码加密方法
+     * 微信小程序登录
      *
-     * @param password
-     * @return java.lang.String
-     * @author DuRuiChi
-     * @create 2025/8/5
-     **/
-    private String encryptPassword(String password) {
-        if (StrUtil.isBlank(password)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码不能为空");
+     * @param code 微信登录code
+     * @param nickname 用户昵称
+     * @param avatarUrl 用户头像URL
+     * @param request HTTP请求对象
+     * @return 登录用户信息
+     */
+    @Override
+    public LoginUserVO wxLogin(String code, String nickname, String avatarUrl, HttpServletRequest request) {
+        // 1. 参数校验
+        if (StrUtil.isBlank(code)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "登录code不能为空");
         }
-        return getEncryptPassword(password);
+
+        try {
+            // 2. 通过code获取微信用户的openid和session_key
+            WxMaJscode2SessionResult session = wxMaService.getUserService().getSessionInfo(code);
+            String openid = session.getOpenid();
+            String unionid = session.getUnionid();
+            
+            log.info("微信登录成功，openid: {}, unionid: {}", openid, unionid);
+
+            // 3. 查询用户是否已存在
+            QueryWrapper queryWrapper = QueryWrapper.create()
+                    .eq("openid", openid);
+            User user = this.getOne(queryWrapper);
+
+            // 4. 如果用户不存在，则创建新用户（自动注册）
+            if (user == null) {
+                user = new User();
+                user.setOpenid(openid);
+                user.setUnionid(unionid);
+                
+                // 设置昵称：优先使用用户输入的昵称，否则生成随机昵称
+                if (StrUtil.isNotBlank(nickname)) {
+                    user.setNickname(nickname);
+                } else {
+                    // 生成随机昵称：小熊猫_xxxxx
+                    String randomNickname = "小熊猫_" + IdUtil.simpleUUID().substring(0, 5);
+                    user.setNickname(randomNickname);
+                }
+                
+                // 保存头像URL（前端已上传到OSS）
+                if (StrUtil.isNotBlank(avatarUrl)) {
+                    user.setAvatarUrl(avatarUrl);
+                    log.info("保存头像URL: {}", avatarUrl);
+                }
+                
+                // 生成账号：XMJD_xxxxx
+                String account = "XMJD_" + IdUtil.simpleUUID().substring(0, 5);
+                user.setAccount(account);
+                
+                user.setRole(UserRoleEnum.USER.getValue());
+                user.setIsAnonymous(false);
+                user.setStatus(true);
+                
+                if (!this.save(user)) {
+                    throw new BusinessException(ErrorCode.OPERATION_ERROR, "创建用户失败");
+                }
+                log.info("创建新用户成功，userId: {}, openid: {}, account: {}, nickname: {}", 
+                    user.getId(), openid, user.getAccount(), user.getNickname());
+            } else {
+                // 更新用户信息
+                boolean needUpdate = false;
+                
+                // 更新unionid
+                if (StrUtil.isNotBlank(unionid) && !unionid.equals(user.getUnionid())) {
+                    user.setUnionid(unionid);
+                    needUpdate = true;
+                }
+                
+                // 更新昵称（如果用户提供了新的昵称）
+                if (StrUtil.isNotBlank(nickname) && !nickname.equals(user.getNickname())) {
+                    user.setNickname(nickname);
+                    needUpdate = true;
+                }
+                
+                // 更新头像URL（如果用户提供了新的头像）
+                if (StrUtil.isNotBlank(avatarUrl) && !avatarUrl.equals(user.getAvatarUrl())) {
+                    user.setAvatarUrl(avatarUrl);
+                    needUpdate = true;
+                    log.info("头像URL更新成功: {}", avatarUrl);
+                }
+                
+                if (needUpdate) {
+                    this.updateById(user);
+                }
+                
+                log.info("用户登录成功，userId: {}, openid: {}, nickname: {}", 
+                    user.getId(), openid, user.getNickname());
+            }
+
+            // 5. 存储登录状态
+            request.getSession().setAttribute(USER_LOGIN_STATE, user);
+
+            // 6. 返回脱敏后的用户信息
+            return getLoginUserVO(user);
+
+        } catch (Exception e) {
+            log.error("微信登录失败", e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "微信登录失败: " + e.getMessage());
+        }
     }
 }

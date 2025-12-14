@@ -41,7 +41,7 @@
 							v-for="item in order.orderItems" 
 							:key="item.id"
 						>
-							<image class="product-img" :src="item.productImage || '/static/logo.png'" mode="aspectFill"></image>
+							<image class="product-img" :src="item.productImage || '/static/images/logo.png'" mode="aspectFill"></image>
 							<view class="product-info">
 								<text class="product-name">{{ item.productName }}</text>
 								<view class="product-price-qty">
@@ -244,7 +244,7 @@ export default {
 }
 
 .filter-item.active {
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 }
 
 .filter-text {
@@ -415,7 +415,7 @@ export default {
 }
 
 .pay-btn {
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	color: #ffffff;
 }
 
@@ -450,7 +450,7 @@ export default {
 .go-mall-btn {
 	width: 300rpx;
 	height: 80rpx;
-	background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	border-radius: 40rpx;
 	font-size: 28rpx;
 	color: #ffffff;
@@ -475,5 +475,16 @@ export default {
 	color: #999999;
 }
 </style>
+
+
+
+
+
+
+
+
+
+
+
 
 
