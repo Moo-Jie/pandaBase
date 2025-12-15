@@ -132,18 +132,27 @@ export default {
 				}
 				
 				const wxPayData = await createWxPayOrder(payParams);
+				console.log('获取到的支付参数:', wxPayData);
 				
 				// 调起微信支付
 				await new Promise((resolve, reject) => {
-					uni.requestPayment({
-						timeStamp: wxPayData.timeStamp,
+					const paymentOption = {
+						timeStamp: String(wxPayData.timeStamp),
 						nonceStr: wxPayData.nonceStr,
 						package: wxPayData.packageVal,
 						signType: wxPayData.signType || 'RSA',
 						paySign: wxPayData.paySign,
-						success: () => resolve(),
-						fail: (err) => reject(err)
-					});
+						success: (res) => {
+							console.log('requestPayment 成功:', res);
+							resolve(res);
+						},
+						fail: (err) => {
+							console.error('requestPayment 失败:', err);
+							reject(err);
+						}
+					};
+					console.log('发起支付参数:', paymentOption);
+					uni.requestPayment(paymentOption);
 				});
 				
 				uni.hideLoading();
