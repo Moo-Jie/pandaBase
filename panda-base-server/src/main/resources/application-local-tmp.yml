@@ -13,11 +13,19 @@ dromara:
         secret-key:
         end-point:
         bucket-name:
-        domain:                            # 访问域名，注意“/”结尾，例如：https://abc.oss-cn-shanghai.aliyuncs.com/
+        domain:                            # 访问域名，必须包含https://协议且以"/"结尾，例如：https://abc.oss-cn-shanghai.aliyuncs.com/
         base-path:                         # 基础路径
 
-# 微信小程序配置
+# 微信商户
 wx:
   miniapp:
-    appid:
-    secret:
+    appid: # 微信小程序appid
+    secret: # 微信小程序密钥
+    merchantId: # 商户号
+    privateKeyPath:  # 商户API私钥路径（测试环境）
+    wechatPayPublicKeyPath:  # 公钥证书路径
+    merchantSerialNumber:  # 商户API证书序列号
+    apiV3Key:  # 商户APIV3密钥
+    payNotifyUrl:   #  支付通知地址（测试环境）
+    refundNotifyUrl:  # 退款通知地址（测试环境）
+    wechatPayPublicKeyId:   # 微信支付公钥ID

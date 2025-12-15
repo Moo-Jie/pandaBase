@@ -21,7 +21,10 @@ public enum ErrorCode {
     OPERATION_ERROR(50001, "操作失败"),
     ACCOUNT_NOT_EXIST(50002, "账号不存在"),
     AUTH_ERROR(50003, "权限校验失败"),
-    ACCOUNT_FORBIDDEN(50004, "账号已被禁用");
+    ACCOUNT_FORBIDDEN(50004, "账号已被禁用"),
+    ORDER_FAILED(60001,"下单失败"),
+    ORDER_QUERY_FAILED(60002,"订单查询失败"),
+    SIGNATURE_VERIFICATION_FAILED(60003,"验证签名失败");
 
     /**
      * 状态码

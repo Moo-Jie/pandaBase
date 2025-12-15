@@ -37,3 +37,4 @@ build/
 ### VS Code ###
 .vscode/
 /panda-base-server/src/main/resources/application-prod.yml
+/panda-base-server/certificate/

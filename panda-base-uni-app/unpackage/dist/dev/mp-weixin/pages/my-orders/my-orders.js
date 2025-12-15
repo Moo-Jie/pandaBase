@@ -9,7 +9,8 @@ const _sfc_main = {
         { label: "全部", value: "all" },
         { label: "待支付", value: 0 },
         { label: "已支付", value: 1 },
-        { label: "已取消", value: 2 }
+        { label: "已取消", value: 2 },
+        { label: "已过期", value: 4 }
       ],
       orderList: [],
       loading: false,
@@ -44,7 +45,7 @@ const _sfc_main = {
         const result = await api_order.getMyOrders(params);
         this.orderList = result.records || [];
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/my-orders/my-orders.vue:143", "加载订单失败:", error);
+        common_vendor.index.__f__("error", "at pages/my-orders/my-orders.vue:149", "加载订单失败:", error);
         this.orderList = [];
       } finally {
         this.loading = false;
@@ -59,6 +60,8 @@ const _sfc_main = {
           return "status-paid";
         case 2:
           return "status-cancelled";
+        case 4:
+          return "status-expired";
         default:
           return "";
       }
@@ -84,7 +87,7 @@ const _sfc_main = {
               });
               this.loadOrders();
             } catch (error) {
-              common_vendor.index.__f__("error", "at pages/my-orders/my-orders.vue:187", "取消订单失败:", error);
+              common_vendor.index.__f__("error", "at pages/my-orders/my-orders.vue:195", "取消订单失败:", error);
             }
           }
         }
@@ -95,6 +98,20 @@ const _sfc_main = {
       const firstItem = order.orderItems && order.orderItems.length > 0 ? order.orderItems[0] : {};
       common_vendor.index.navigateTo({
         url: `/pages/payment/payment?orderId=${order.id}&orderNo=${encodeURIComponent(order.orderNo)}&productName=${encodeURIComponent(firstItem.productName || "")}&quantity=${firstItem.quantity || 1}&payAmount=${order.payAmount}`
+      });
+    },
+    // 重新购买
+    handleReorder(order) {
+      if (!order.orderItems || order.orderItems.length === 0) {
+        common_vendor.index.showToast({
+          title: "订单商品信息缺失",
+          icon: "none"
+        });
+        return;
+      }
+      const firstItem = order.orderItems[0];
+      common_vendor.index.navigateTo({
+        url: `/pages/product-detail/product-detail?id=${firstItem.productId}`
       });
     },
     // 去商城
@@ -140,8 +157,12 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       }, order.orderStatus === 0 ? {
         i: common_vendor.o(($event) => $options.goPay(order), order.id)
       } : {}, {
-        j: order.id,
-        k: common_vendor.o(($event) => $options.viewOrderDetail(order.id), order.id)
+        j: order.orderStatus === 2 || order.orderStatus === 4
+      }, order.orderStatus === 2 || order.orderStatus === 4 ? {
+        k: common_vendor.o(($event) => $options.handleReorder(order), order.id)
+      } : {}, {
+        l: order.id,
+        m: common_vendor.o(($event) => $options.viewOrderDetail(order.id), order.id)
       });
     })
   } : !$data.loading ? {

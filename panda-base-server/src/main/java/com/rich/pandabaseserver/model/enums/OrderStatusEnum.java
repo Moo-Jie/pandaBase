@@ -28,7 +28,12 @@ public enum OrderStatusEnum {
     /**
      * 已退款
      */
-    REFUNDED(3, "已退款");
+    REFUNDED(3, "已退款"),
+
+    /**
+     * 已过期
+     */
+    EXPIRED(4, "已过期");
 
     private final Integer value;
     private final String text;
@@ -53,4 +58,3 @@ public enum OrderStatusEnum {
         return null;
     }
 }
-

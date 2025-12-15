@@ -56,8 +56,10 @@ const _sfc_main = {
     },
     // 处理微信登录
     async handleWxLogin() {
-      if (this.loading)
+      if (this.loading) {
+        common_vendor.index.__f__("log", "at pages/login/login.vue:130", "登录中，忽略重复点击");
         return;
+      }
       this.loading = true;
       try {
         common_vendor.index.showLoading({
@@ -68,11 +70,11 @@ const _sfc_main = {
           common_vendor.index.login({
             provider: "weixin",
             success: (res) => {
-              common_vendor.index.__f__("log", "at pages/login/login.vue:142", "uni.login success:", res);
+              common_vendor.index.__f__("log", "at pages/login/login.vue:147", "uni.login success:", res);
               resolve(res);
             },
             fail: (err) => {
-              common_vendor.index.__f__("error", "at pages/login/login.vue:146", "uni.login fail:", err);
+              common_vendor.index.__f__("error", "at pages/login/login.vue:151", "uni.login fail:", err);
               reject(err);
             }
           });
@@ -81,7 +83,8 @@ const _sfc_main = {
           throw new Error("获取登录凭证失败");
         }
         const code = loginRes.code;
-        common_vendor.index.__f__("log", "at pages/login/login.vue:157", "获取到微信登录code:", code);
+        common_vendor.index.__f__("log", "at pages/login/login.vue:162", "获取到微信登录code:", code);
+        await new Promise((resolve) => setTimeout(resolve, 100));
         const loginData = {
           code,
           nickname: this.nickname || "",
@@ -89,7 +92,7 @@ const _sfc_main = {
           avatarUrl: this.avatarUrl || ""
           // 用户选择的头像（可能为空）
         };
-        common_vendor.index.__f__("log", "at pages/login/login.vue:166", "登录数据:", loginData);
+        common_vendor.index.__f__("log", "at pages/login/login.vue:174", "登录数据:", loginData);
         const result = await api_user.wxLogin(loginData);
         utils_auth.setUserInfo(result);
         common_vendor.index.hideLoading();
@@ -111,7 +114,7 @@ const _sfc_main = {
         }, 1500);
       } catch (error) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/login/login.vue:196", "微信登录失败:", error);
+        common_vendor.index.__f__("error", "at pages/login/login.vue:204", "微信登录失败:", error);
         utils_message.showError(error.message || "登录失败，请重试");
       } finally {
         this.loading = false;

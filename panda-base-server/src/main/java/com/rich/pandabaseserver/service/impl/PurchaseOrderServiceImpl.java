@@ -179,8 +179,8 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
 
         // 4. 校验订单是否过期
         if (LocalDateTime.now().isAfter(order.getExpireTime())) {
-            // 自动取消订单
-            this.cancelOrder(orderId, userId, "订单已过期");
+            // 自动取消订单（改为过期状态）
+            this.expireOrder(orderId, userId);
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "订单已过期");
         }
 
@@ -266,6 +266,26 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
 
         log.info("取消订单成功，订单号：{}，用户ID：{}，原因：{}", order.getOrderNo(), userId, cancelReason);
         return true;
+    }
+
+    /**
+     * 内部方法：将订单设为过期并恢复库存
+     */
+    private void expireOrder(Long orderId, Long userId) {
+         PurchaseOrder order = this.getById(orderId);
+         if (order != null && order.getOrderStatus().equals(OrderStatusEnum.PENDING.getValue())) {
+             order.setOrderStatus(OrderStatusEnum.EXPIRED.getValue());
+             order.setCancelTime(LocalDateTime.now());
+             order.setCancelReason("订单已过期，系统自动取消");
+             order.setUpdateTime(LocalDateTime.now());
+             this.updateById(order);
+
+             // 恢复库存
+             List<OrderItem> orderItems = orderItemService.listByOrderId(orderId);
+             for (OrderItem item : orderItems) {
+                 productService.updateStock(item.getProductId(), item.getQuantity());
+             }
+         }
     }
 
     @Override
@@ -368,7 +388,8 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
         
         for (PurchaseOrder order : expiredOrders) {
             try {
-                this.cancelOrder(order.getId(), order.getUserId(), "订单已过期，系统自动取消");
+                // 使用新的过期逻辑（状态改为已过期）
+                this.expireOrder(order.getId(), order.getUserId());
                 successCount++;
             } catch (Exception e) {
                 failCount++;

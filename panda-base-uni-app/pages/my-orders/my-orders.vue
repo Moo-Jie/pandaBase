@@ -41,7 +41,7 @@
 							v-for="item in order.orderItems" 
 							:key="item.id"
 						>
-							<image class="product-img" :src="item.productImage || '/static/images/logo.png'" mode="aspectFill"></image>
+							<image class="product-img" :src="item.productImage || '/static/images/logo.png'" mode="widthFix"></image>
 							<view class="product-info">
 								<text class="product-name">{{ item.productName }}</text>
 								<view class="product-price-qty">
@@ -69,6 +69,11 @@
 								v-if="order.orderStatus === 0"
 								@click.stop="goPay(order)"
 							>前往支付</button>
+							<button 
+								class="action-btn reorder-btn" 
+								v-if="order.orderStatus === 2 || order.orderStatus === 4"
+								@click.stop="handleReorder(order)"
+							>重新购买</button>
 						</view>
 					</view>
 				</view>
@@ -101,7 +106,8 @@ export default {
 				{ label: '全部', value: 'all' },
 				{ label: '待支付', value: 0 },
 				{ label: '已支付', value: 1 },
-				{ label: '已取消', value: 2 }
+				{ label: '已取消', value: 2 },
+				{ label: '已过期', value: 4 }
 			],
 			orderList: [],
 			loading: false,
@@ -156,6 +162,8 @@ export default {
 					return 'status-paid';
 				case 2:
 					return 'status-cancelled';
+				case 4:
+					return 'status-expired';
 				default:
 					return '';
 			}
@@ -198,6 +206,25 @@ export default {
 			
 			uni.navigateTo({
 				url: `/pages/payment/payment?orderId=${order.id}&orderNo=${encodeURIComponent(order.orderNo)}&productName=${encodeURIComponent(firstItem.productName || '')}&quantity=${firstItem.quantity || 1}&payAmount=${order.payAmount}`
+			});
+		},
+		
+		// 重新购买
+		handleReorder(order) {
+			if (!order.orderItems || order.orderItems.length === 0) {
+				uni.showToast({
+					title: '订单商品信息缺失',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			// 获取第一个商品
+			const firstItem = order.orderItems[0];
+			
+			// 跳转到商品详情页
+			uni.navigateTo({
+				url: `/pages/product-detail/product-detail?id=${firstItem.productId}`
 			});
 		},
 		
@@ -310,6 +337,10 @@ export default {
 	background-color: #999999;
 }
 
+.status-expired {
+	background-color: #cccccc;
+}
+
 /* 订单商品 */
 .order-products {
 	padding: 20rpx 24rpx;
@@ -324,11 +355,16 @@ export default {
 	margin-bottom: 0;
 }
 
+/* 修改后的图片CSS，参考确认订单页 */
 .product-img {
-	width: 120rpx;
-	height: 120rpx;
+	width: 150rpx;
+	height: auto;
+	max-height: 200rpx;
 	border-radius: 12rpx;
 	margin-right: 20rpx;
+	background-color: #f5f5f5;
+	flex-shrink: 0;
+	display: block;
 }
 
 .product-info {
@@ -419,6 +455,12 @@ export default {
 	color: #ffffff;
 }
 
+.reorder-btn {
+	background-color: #ffffff;
+	color: #666666;
+	border: 2rpx solid #e0e0e0 !important;
+}
+
 /* 空状态 */
 .empty-state {
 	display: flex;
@@ -475,16 +517,3 @@ export default {
 	color: #999999;
 }
 </style>
-
-
-
-
-
-
-
-
-
-
-
-
-

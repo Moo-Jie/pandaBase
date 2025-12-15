@@ -125,7 +125,12 @@ export default {
 		
 		// 处理微信登录
 		async handleWxLogin() {
-			if (this.loading) return;
+			// 防止重复点击
+			if (this.loading) {
+				console.log('登录中，忽略重复点击');
+				return;
+			}
+			
 			this.loading = true;
 			
 			try {
@@ -134,7 +139,7 @@ export default {
 					mask: true
 				});
 				
-				// 1. 调用wx.login获取code
+				// 1. 调用wx.login获取code（每次都重新获取新的code）
 				const loginRes = await new Promise((resolve, reject) => {
 					uni.login({
 						provider: 'weixin',
@@ -156,6 +161,9 @@ export default {
 				const code = loginRes.code;
 				console.log('获取到微信登录code:', code);
 				
+				// 小延迟，确保code有效
+				await new Promise(resolve => setTimeout(resolve, 100));
+				
 				// 2. 准备登录数据
 				const loginData = {
 					code: code,
@@ -165,7 +173,7 @@ export default {
 				
 				console.log('登录数据:', loginData);
 				
-				// 3. 调用后端接口，使用code换取用户信息
+				// 3. 调用后端接口，使用code换取用户信息（只调用一次）
 				const result = await wxLogin(loginData);
 				
 				// 4. 保存用户信息到本地

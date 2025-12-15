@@ -3,8 +3,8 @@ const utils_request = require("../utils/request.js");
 function createOrder(data) {
   return utils_request.post("/order/create", data);
 }
-function payOrder(data) {
-  return utils_request.post("/order/pay", data);
+function createWxPayOrder(data) {
+  return utils_request.post("/wxMiniappPay/createOrder", data);
 }
 function cancelOrder(orderId) {
   return utils_request.post(`/order/cancel/${orderId}`, {});
@@ -17,7 +17,7 @@ function getOrderDetail(id) {
 }
 exports.cancelOrder = cancelOrder;
 exports.createOrder = createOrder;
+exports.createWxPayOrder = createWxPayOrder;
 exports.getMyOrders = getMyOrders;
 exports.getOrderDetail = getOrderDetail;
-exports.payOrder = payOrder;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/api/order.js.map

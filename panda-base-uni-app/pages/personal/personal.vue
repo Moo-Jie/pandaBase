@@ -3,7 +3,7 @@
     <!-- 顶部用户信息区 -->
     <view class="user-header">
       <view class="user-info" v-if="isLoggedIn">
-        <image class="avatar" :src="userInfo.avatarUrl || '/static/images/logo.png'" mode="aspectFill"></image>
+        <image class="avatar" :src="getAvatarUrl()" mode="aspectFill"></image>
         <view class="info">
           <text class="nickname">{{ userInfo.nickname || '熊猫爱好者' }}</text>
           <text class="account">账号：{{ userInfo.account || '未设置' }}</text>
@@ -135,6 +135,29 @@ export default {
     this.checkLoginStatus();
   },
   methods: {
+    // 获取头像URL（处理协议前缀）
+    getAvatarUrl() {
+      if (!this.userInfo.avatarUrl) {
+        return '/static/images/logo.png';
+      }
+      
+      const url = this.userInfo.avatarUrl;
+      
+      // 如果已经包含http://或https://协议，直接返回
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      
+      // 如果不包含协议但包含域名（例如：panda-base-server.oss-cn-beijing.aliyuncs.com/...）
+      // 则添加https://前缀
+      if (url.includes('.')) {
+        return 'https://' + url;
+      }
+      
+      // 否则当作相对路径处理
+      return url;
+    },
+
     // 检查登录状态
     async checkLoginStatus() {
       this.isLoggedIn = isLoggedIn();

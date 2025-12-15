@@ -18,6 +18,14 @@ export function payOrder(data) {
 }
 
 /**
+ * 调用微信预支付（获取 requestPayment 所需参数）
+ * @param {Object} data { orderId, addressId? }
+ */
+export function createWxPayOrder(data) {
+	return post('/wxMiniappPay/createOrder', data);
+}
+
+/**
  * 取消订单
  * @param {Number} orderId 订单ID
  */

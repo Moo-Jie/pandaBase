@@ -11,7 +11,7 @@ function logout() {
   return utils_request.post("/user/logout", {});
 }
 function uploadAvatar(filePath) {
-  const BASE_URL = "http://169.254.43.148:8101/api";
+  const BASE_URL = "http://localhost:8101/api";
   return new Promise((resolve, reject) => {
     common_vendor.index.uploadFile({
       url: BASE_URL + "/file/upload-image",

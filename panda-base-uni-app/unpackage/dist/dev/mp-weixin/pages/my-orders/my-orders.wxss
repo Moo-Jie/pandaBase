@@ -83,6 +83,9 @@
 .status-cancelled.data-v-5fe9fe45 {
 	background-color: #999999;
 }
+.status-expired.data-v-5fe9fe45 {
+	background-color: #cccccc;
+}
 
 /* 订单商品 */
 .order-products.data-v-5fe9fe45 {
@@ -95,11 +98,17 @@
 .product-item.data-v-5fe9fe45:last-child {
 	margin-bottom: 0;
 }
+
+/* 修改后的图片CSS，参考确认订单页 */
 .product-img.data-v-5fe9fe45 {
-	width: 120rpx;
-	height: 120rpx;
+	width: 150rpx;
+	height: auto;
+	max-height: 200rpx;
 	border-radius: 12rpx;
 	margin-right: 20rpx;
+	background-color: #f5f5f5;
+	flex-shrink: 0;
+	display: block;
 }
 .product-info.data-v-5fe9fe45 {
 	flex: 1;
@@ -175,6 +184,11 @@
 .pay-btn.data-v-5fe9fe45 {
 	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	color: #ffffff;
+}
+.reorder-btn.data-v-5fe9fe45 {
+	background-color: #ffffff;
+	color: #666666;
+	border: 2rpx solid #e0e0e0 !important;
 }
 
 /* 空状态 */

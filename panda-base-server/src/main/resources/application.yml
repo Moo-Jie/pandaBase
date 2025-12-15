@@ -23,7 +23,6 @@ spring:
     active: local
 server:
   port: 8101
-  domain: http://localhost:8101
   servlet:
     context-path: /api
     # cookie 30 天过期
@@ -52,4 +51,3 @@ file:
     max-size: 10
     # 允许的文件类型
     allowed-types: jpg,jpeg,png,gif,webp
-

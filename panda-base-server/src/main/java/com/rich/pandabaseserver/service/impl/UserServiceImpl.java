@@ -10,17 +10,17 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.rich.pandabaseserver.exception.BusinessException;
 import com.rich.pandabaseserver.exception.ErrorCode;
+import com.rich.pandabaseserver.mapper.UserMapper;
 import com.rich.pandabaseserver.model.dto.user.UserQueryRequest;
 import com.rich.pandabaseserver.model.entity.User;
-import com.rich.pandabaseserver.mapper.UserMapper;
 import com.rich.pandabaseserver.model.enums.UserRoleEnum;
 import com.rich.pandabaseserver.model.vo.LoginUserVO;
 import com.rich.pandabaseserver.model.vo.UserVO;
-import com.rich.pandabaseserver.service.LocalFileStorageService;
 import com.rich.pandabaseserver.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import me.chanjar.weixin.common.error.WxErrorException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
@@ -40,7 +40,7 @@ import static com.rich.pandabaseserver.constant.UserConstant.USER_LOGIN_STATE;
 @Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
-    
+
     @Resource
     private WxMaService wxMaService;
     // 加密盐值
@@ -234,10 +234,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     /**
      * 微信小程序登录
      *
-     * @param code 微信登录code
-     * @param nickname 用户昵称
+     * @param code      微信登录code
+     * @param nickname  用户昵称
      * @param avatarUrl 用户头像URL
-     * @param request HTTP请求对象
+     * @param request   HTTP请求对象
      * @return 登录用户信息
      */
     @Override
@@ -248,11 +248,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         try {
+            log.info("开始微信登录，code: {}", code);
+
             // 2. 通过code获取微信用户的openid和session_key
-            WxMaJscode2SessionResult session = wxMaService.getUserService().getSessionInfo(code);
+            WxMaJscode2SessionResult session;
+            try {
+                session = wxMaService.getUserService().getSessionInfo(code);
+            } catch (WxErrorException e) {
+                log.error("微信接口调用失败，错误代码：{}，错误信息：{}，微信原始报文：{}",
+                        e.getError().getErrorCode(),
+                        e.getError().getErrorMsg(),
+                        e.getError().getJson());
+
+                // 针对不同的错误码给出不同的提示
+                if (e.getError().getErrorCode() == 40029) {
+                    throw new BusinessException(ErrorCode.OPERATION_ERROR,
+                            "登录凭证已失效，请重新登录。可能原因：登录凭证已被使用或已过期");
+                } else if (e.getError().getErrorCode() == 40163) {
+                    throw new BusinessException(ErrorCode.OPERATION_ERROR,
+                            "登录凭证校验失败，请检查小程序配置");
+                } else {
+                    throw new BusinessException(ErrorCode.OPERATION_ERROR,
+                            "微信登录失败：" + e.getError().getErrorMsg());
+                }
+            }
+
             String openid = session.getOpenid();
             String unionid = session.getUnionid();
-            
+
             log.info("微信登录成功，openid: {}, unionid: {}", openid, unionid);
 
             // 3. 查询用户是否已存在
@@ -265,7 +288,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 user = new User();
                 user.setOpenid(openid);
                 user.setUnionid(unionid);
-                
+
                 // 设置昵称：优先使用用户输入的昵称，否则生成随机昵称
                 if (StrUtil.isNotBlank(nickname)) {
                     user.setNickname(nickname);
@@ -274,55 +297,55 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                     String randomNickname = "小熊猫_" + IdUtil.simpleUUID().substring(0, 5);
                     user.setNickname(randomNickname);
                 }
-                
+
                 // 保存头像URL（前端已上传到OSS）
                 if (StrUtil.isNotBlank(avatarUrl)) {
                     user.setAvatarUrl(avatarUrl);
                     log.info("保存头像URL: {}", avatarUrl);
                 }
-                
+
                 // 生成账号：XMJD_xxxxx
                 String account = "XMJD_" + IdUtil.simpleUUID().substring(0, 5);
                 user.setAccount(account);
-                
+
                 user.setRole(UserRoleEnum.USER.getValue());
                 user.setIsAnonymous(false);
                 user.setStatus(true);
-                
+
                 if (!this.save(user)) {
                     throw new BusinessException(ErrorCode.OPERATION_ERROR, "创建用户失败");
                 }
-                log.info("创建新用户成功，userId: {}, openid: {}, account: {}, nickname: {}", 
-                    user.getId(), openid, user.getAccount(), user.getNickname());
+                log.info("创建新用户成功，userId: {}, openid: {}, account: {}, nickname: {}",
+                        user.getId(), openid, user.getAccount(), user.getNickname());
             } else {
                 // 更新用户信息
                 boolean needUpdate = false;
-                
+
                 // 更新unionid
                 if (StrUtil.isNotBlank(unionid) && !unionid.equals(user.getUnionid())) {
                     user.setUnionid(unionid);
                     needUpdate = true;
                 }
-                
+
                 // 更新昵称（如果用户提供了新的昵称）
                 if (StrUtil.isNotBlank(nickname) && !nickname.equals(user.getNickname())) {
                     user.setNickname(nickname);
                     needUpdate = true;
                 }
-                
+
                 // 更新头像URL（如果用户提供了新的头像）
                 if (StrUtil.isNotBlank(avatarUrl) && !avatarUrl.equals(user.getAvatarUrl())) {
                     user.setAvatarUrl(avatarUrl);
                     needUpdate = true;
                     log.info("头像URL更新成功: {}", avatarUrl);
                 }
-                
+
                 if (needUpdate) {
                     this.updateById(user);
                 }
-                
-                log.info("用户登录成功，userId: {}, openid: {}, nickname: {}", 
-                    user.getId(), openid, user.getNickname());
+
+                log.info("用户登录成功，userId: {}, openid: {}, nickname: {}",
+                        user.getId(), openid, user.getNickname());
             }
 
             // 5. 存储登录状态

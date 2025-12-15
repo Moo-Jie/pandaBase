@@ -48,7 +48,7 @@ const _sfc_main = {
       this.paying = true;
       try {
         common_vendor.index.showLoading({
-          title: "支付中...",
+          title: "拉起支付...",
           mask: true
         });
         const payParams = {
@@ -57,11 +57,22 @@ const _sfc_main = {
         if (this.addressId) {
           payParams.addressId = this.addressId;
         }
-        const result = await api_order.payOrder(payParams);
+        const wxPayData = await api_order.createWxPayOrder(payParams);
+        await new Promise((resolve, reject) => {
+          common_vendor.index.requestPayment({
+            timeStamp: wxPayData.timeStamp,
+            nonceStr: wxPayData.nonceStr,
+            package: wxPayData.packageVal,
+            signType: wxPayData.signType || "RSA",
+            paySign: wxPayData.paySign,
+            success: () => resolve(),
+            fail: (err) => reject(err)
+          });
+        });
         common_vendor.index.hideLoading();
         common_vendor.index.showModal({
           title: "支付成功",
-          content: "恭喜您，支付成功！已为您生成兑换码，可在订单详情中查看",
+          content: "支付成功，兑换码生成可能有几秒延迟，可在订单详情查看",
           confirmText: "查看详情",
           cancelText: "稍后查看",
           success: (res) => {
@@ -78,9 +89,9 @@ const _sfc_main = {
         });
       } catch (error) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/payment/payment.vue:161", "支付失败:", error);
+        common_vendor.index.__f__("error", "at pages/payment/payment.vue:172", "支付失败:", error);
         common_vendor.index.showToast({
-          title: error.message || "支付失败",
+          title: error && error.errMsg || error.message || "支付失败",
           icon: "none",
           duration: 2e3
         });

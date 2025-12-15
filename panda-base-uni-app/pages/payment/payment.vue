@@ -67,7 +67,7 @@
 </template>
 
 <script>
-import { payOrder } from '../../api/order.js';
+import { createWxPayOrder } from '../../api/order.js';
 
 export default {
 	data() {
@@ -118,11 +118,11 @@ export default {
 			
 			try {
 				uni.showLoading({
-					title: '支付中...',
+					title: '拉起支付...',
 					mask: true
 				});
 				
-				// 调用支付接口
+				// 向后端请求微信预支付参数
 				const payParams = {
 					orderId: this.orderId
 				};
@@ -131,24 +131,35 @@ export default {
 					payParams.addressId = this.addressId;
 				}
 				
-				const result = await payOrder(payParams);
+				const wxPayData = await createWxPayOrder(payParams);
+				
+				// 调起微信支付
+				await new Promise((resolve, reject) => {
+					uni.requestPayment({
+						timeStamp: wxPayData.timeStamp,
+						nonceStr: wxPayData.nonceStr,
+						package: wxPayData.packageVal,
+						signType: wxPayData.signType || 'RSA',
+						paySign: wxPayData.paySign,
+						success: () => resolve(),
+						fail: (err) => reject(err)
+					});
+				});
 				
 				uni.hideLoading();
 				
-				// 支付成功，跳转到订单详情
+				// 支付成功提示
 				uni.showModal({
 					title: '支付成功',
-					content: '恭喜您，支付成功！已为您生成兑换码，可在订单详情中查看',
+					content: '支付成功，兑换码生成可能有几秒延迟，可在订单详情查看',
 					confirmText: '查看详情',
 					cancelText: '稍后查看',
 					success: (res) => {
 						if (res.confirm) {
-							// 跳转到订单详情页（使用redirectTo防止返回到支付页）
 							uni.redirectTo({
 								url: `/pages/order-detail/order-detail?id=${this.orderId}`
 							});
 						} else {
-							// 跳转到我的订单页面（使用redirectTo防止返回到支付页）
 							uni.redirectTo({
 								url: '/pages/my-orders/my-orders'
 							});
@@ -160,7 +171,7 @@ export default {
 				uni.hideLoading();
 				console.error('支付失败:', error);
 				uni.showToast({
-					title: error.message || '支付失败',
+					title: (error && error.errMsg) || error.message || '支付失败',
 					icon: 'none',
 					duration: 2000
 				});

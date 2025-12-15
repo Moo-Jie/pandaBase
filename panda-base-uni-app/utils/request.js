@@ -1,5 +1,5 @@
 // API 请求工具
-const BASE_URL = 'http://169.254.43.148:8101/api';
+const BASE_URL = 'http://localhost:8101/api';
 const COOKIE_KEY = 'user_cookies';
 
 /**

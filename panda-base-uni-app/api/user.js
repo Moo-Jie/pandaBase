@@ -29,7 +29,7 @@ export function logout() {
  */
 export function uploadAvatar(filePath) {
 	// 获取完整的BASE_URL
-	const BASE_URL = 'http://169.254.43.148:8101/api';
+	const BASE_URL = 'http://localhost:8101/api';
 	
 	return new Promise((resolve, reject) => {
 		uni.uploadFile({
