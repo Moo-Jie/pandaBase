@@ -109,6 +109,30 @@
 .buy-button.data-v-4d4a2bad::after {
 	border: none;
 }
+
+/* 联系客服按钮 */
+.contact-service-btn.data-v-4d4a2bad {
+	width: 100%;
+	height: 80rpx;
+	background: linear-gradient(135deg, #4CAF50 0%, #297512 100%);
+	color: #ffffff;
+	font-size: 28rpx;
+	font-weight: bold;
+	border-radius: 40rpx;
+	border: none;
+	line-height: 80rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+}
+.contact-service-btn.data-v-4d4a2bad::after {
+	border: none;
+}
+.service-emoji.data-v-4d4a2bad {
+	margin-right: 8rpx;
+	font-size: 32rpx;
+}
 .button-hover.data-v-4d4a2bad {
 	opacity: 0.85;
 }

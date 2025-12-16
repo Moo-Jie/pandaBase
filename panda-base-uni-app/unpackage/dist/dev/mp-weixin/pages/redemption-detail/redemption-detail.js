@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const utils_customerService = require("../../utils/customer-service.js");
 const _sfc_main = {
   data() {
     return {
@@ -26,7 +27,7 @@ const _sfc_main = {
       try {
         this.record = JSON.parse(decodeURIComponent(options.data));
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/redemption-detail/redemption-detail.vue:127", "解析记录数据失败:", error);
+        common_vendor.index.__f__("error", "at pages/redemption-detail/redemption-detail.vue:143", "解析记录数据失败:", error);
         common_vendor.index.showToast({
           title: "数据加载失败",
           icon: "none"
@@ -91,6 +92,21 @@ const _sfc_main = {
     // 切换兑换码显示/隐藏
     toggleRedemptionCode() {
       this.showRedemptionCode = !this.showRedemptionCode;
+    },
+    // 联系客服（核销专用）
+    handleContactServiceForVerify() {
+      utils_customerService.openCustomerServiceForRedemption({
+        id: this.record.id,
+        code: this.record.redemptionCode,
+        recordNo: this.record.recordNo
+      });
+    },
+    // 联系客服（通用）
+    handleContactService() {
+      utils_customerService.openCustomerServiceForRedemption({
+        id: this.record.id,
+        code: this.record.redemptionCode
+      });
     }
   }
 };
@@ -124,9 +140,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, $options.isMembershipCard ? {} : {}, {
     r: $options.isPhysicalProduct
   }, $options.isPhysicalProduct ? {
-    s: common_vendor.t($data.record.recordNo)
+    s: common_vendor.t($data.record.recordNo),
+    t: common_vendor.o((...args) => $options.handleContactServiceForVerify && $options.handleContactServiceForVerify(...args))
   } : {}, {
-    t: $options.isTicketCard
+    v: common_vendor.o((...args) => $options.handleContactService && $options.handleContactService(...args)),
+    w: $options.isTicketCard
   }, $options.isTicketCard ? {} : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-cc2b5adf"]]);

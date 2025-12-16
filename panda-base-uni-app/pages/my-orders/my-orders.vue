@@ -28,7 +28,10 @@
 				>
 					<!-- 订单头部 -->
 					<view class="order-header">
-						<text class="order-no">订单号：{{ order.orderNo }}</text>
+						<view class="order-no-wrapper">
+							<text class="order-no">订单号：{{ order.orderNo }}</text>
+							<text class="order-no-copy" @click.stop="handleCopyOrderNo(order.orderNo)">复制</text>
+						</view>
 						<view class="order-status" :class="getStatusClass(order.orderStatus)">
 							<text>{{ order.orderStatusText }}</text>
 						</view>
@@ -71,7 +74,7 @@
 							>前往支付</button>
 							<button 
 								class="action-btn reorder-btn" 
-								v-if="order.orderStatus === 2 || order.orderStatus === 4"
+								v-if="order.orderStatus === 2 || order.orderStatus === 4 || order.orderStatus === 3"
 								@click.stop="handleReorder(order)"
 							>重新购买</button>
 						</view>
@@ -92,11 +95,16 @@
 		<view class="loading-state" v-if="loading">
 			<text class="loading-text">加载中...</text>
 		</view>
+		
+		<!-- 补单提示（固定在底部） -->
+		<view class="repair-order-btn-container">
+			<text class="repair-order-text" @click="handleRepairOrder">已支付但未显示？点击这里补单</text>
+		</view>
 	</view>
 </template>
 
 <script>
-import { getMyOrders, cancelOrder as cancelOrderApi } from '../../api/order.js';
+import { getMyOrders, cancelOrder as cancelOrderApi, repairOrder } from '../../api/order.js';
 
 export default {
 	data() {
@@ -107,6 +115,7 @@ export default {
 				{ label: '待支付', value: 0 },
 				{ label: '已支付', value: 1 },
 				{ label: '已取消', value: 2 },
+				{ label: '已退款', value: 3 },
 				{ label: '已过期', value: 4 }
 			],
 			orderList: [],
@@ -162,6 +171,8 @@ export default {
 					return 'status-paid';
 				case 2:
 					return 'status-cancelled';
+				case 3:
+					return 'status-refunded';
 				case 4:
 					return 'status-expired';
 				default:
@@ -173,6 +184,27 @@ export default {
 		viewOrderDetail(orderId) {
 			uni.navigateTo({
 				url: `/pages/order-detail/order-detail?id=${orderId}`
+			});
+		},
+		
+		handleCopyOrderNo(orderNo) {
+			if (!orderNo) {
+				return;
+			}
+			uni.setClipboardData({
+				data: orderNo,
+				success: () => {
+					uni.showToast({
+						title: '订单号已复制',
+						icon: 'success'
+					});
+				},
+				fail: () => {
+					uni.showToast({
+						title: '复制失败',
+						icon: 'none'
+					});
+				}
 			});
 		},
 		
@@ -232,6 +264,46 @@ export default {
 		goMall() {
 			uni.switchTab({
 				url: '/pages/mall/mall'
+			});
+		},
+		
+		// 补单（已支付但未显示）
+		handleRepairOrder() {
+			uni.showModal({
+				title: '补单说明',
+				content: '如果您已支付成功但订单状态未更新或未收到兑换码，可点击确定进行补单。系统会向微信官方查询支付状态并补发兑换码。',
+				confirmText: '确定补单',
+				cancelText: '取消',
+				success: async (res) => {
+					if (res.confirm) {
+						uni.showLoading({
+							title: '正在补单...',
+							mask: true
+						});
+						
+						try {
+							await repairOrder();
+							uni.hideLoading();
+							uni.showModal({
+								title: '补单成功',
+								content: '订单已更新，兑换码已发放，请前往个人中心-礼品兑换查看',
+								showCancel: false,
+								success: () => {
+									// 刷新订单列表
+									this.loadOrders();
+								}
+							});
+						} catch (error) {
+							uni.hideLoading();
+							console.error('补单失败:', error);
+							uni.showModal({
+								title: '补单失败',
+								content: error.message || '补单失败，请确认是否已成功支付或稍后重试',
+								showCancel: false
+							});
+						}
+					}
+				}
 			});
 		}
 	}
@@ -313,9 +385,20 @@ export default {
 	border-bottom: 1rpx solid #f0f0f0;
 }
 
+.order-no-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
 .order-no {
 	font-size: 26rpx;
 	color: #666666;
+}
+
+.order-no-copy {
+	font-size: 24rpx;
+	color: #297512;
 }
 
 .order-status {
@@ -335,6 +418,10 @@ export default {
 
 .status-cancelled {
 	background-color: #999999;
+}
+
+.status-refunded {
+	background-color: #ff4d4f;
 }
 
 .status-expired {
@@ -515,5 +602,30 @@ export default {
 .loading-text {
 	font-size: 28rpx;
 	color: #999999;
+}
+
+/* 补单按钮容器 */
+.repair-order-btn-container {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding: 20rpx 30rpx;
+	padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+	background-color: #ffffff;
+	box-shadow: 0 -4rpx 12rpx rgba(0, 0, 0, 0.08);
+	z-index: 100;
+}
+
+.repair-order-text {
+	font-size: 24rpx;
+	color: #999999;
+	text-align: center;
+	display: block;
+}
+
+/* 为页面底部添加padding，避免被固定按钮遮挡 */
+.container {
+	padding-bottom: 140rpx;
 }
 </style>

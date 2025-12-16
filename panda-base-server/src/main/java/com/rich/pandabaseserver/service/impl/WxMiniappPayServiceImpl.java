@@ -13,8 +13,10 @@ import com.rich.pandabaseserver.model.dto.order.CreateOrderRequest;
 import com.rich.pandabaseserver.model.dto.order.QueryOrderRequest;
 import com.rich.pandabaseserver.model.dto.order.RefundOrderRequest;
 import com.rich.pandabaseserver.mapper.PaymentRecordMapper;
+import com.rich.pandabaseserver.mapper.RepairOrderRecordMapper;
 import com.rich.pandabaseserver.model.entity.*;
 import com.rich.pandabaseserver.model.enums.OrderStatusEnum;
+import com.rich.pandabaseserver.model.enums.RepairOrderTypeEnum;
 import com.rich.pandabaseserver.service.*;
 import com.rich.pandabaseserver.utils.HttpServletUtils;
 import com.wechat.pay.java.core.Config;
@@ -45,6 +47,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 import static com.rich.pandabaseserver.exception.ErrorCode.*;
 
@@ -83,6 +86,9 @@ public class WxMiniappPayServiceImpl implements WxMiniappPayService {
     
     @Autowired
     private OrderItemService orderItemService;
+    
+    @Autowired
+    private RepairOrderRecordMapper repairOrderRecordMapper;
 
     /**
      * 预支付订单/统一下单
@@ -799,5 +805,240 @@ public class WxMiniappPayServiceImpl implements WxMiniappPayService {
         return true;
     }
 
-}
+    /**
+     * 用户补单（查询微信支付状态并补单）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResponse repairOrderByUser(Long userId, String orderNo) {
+        log.info("用户发起补单请求，用户ID：{}，订单号：{}", userId, orderNo);
+        
+        try {
+            List<PurchaseOrder> orders = new ArrayList<>();
+            if (orderNo != null && !orderNo.trim().isEmpty()) {
+                QueryWrapper orderQuery = QueryWrapper.create().where("order_no = ?", orderNo);
+                PurchaseOrder order = purchaseOrderService.getOne(orderQuery);
+                if (order != null) {
+                    orders.add(order);
+                }
+            } else {
+                QueryWrapper orderQuery = QueryWrapper.create()
+                        .where("user_id = ?", userId)
+                        .and("order_status IN (?, ?, ?)", 
+                             OrderStatusEnum.PENDING.getValue(),
+                             OrderStatusEnum.CANCELLED.getValue(),
+                             OrderStatusEnum.EXPIRED.getValue())
+                        .orderBy("create_time DESC");
+                orders = purchaseOrderService.list(orderQuery);
+            }
+            
+            if (orders == null || orders.isEmpty()) {
+                return ResultUtils.error(ErrorCode.NOT_FOUND_ERROR, "未找到待补单的订单");
+            }
+            
+            int successCount = 0;
+            List<String> messages = new ArrayList<>();
+            
+            for (PurchaseOrder order : orders) {
+                if (!order.getUserId().equals(userId)) {
+                    messages.add(order.getOrderNo() + " 无权操作");
+                    continue;
+                }
+                
+                if (OrderStatusEnum.PAID.getValue().equals(order.getOrderStatus())) {
+                    messages.add(order.getOrderNo() + " 已支付，无需补单");
+                    continue;
+                }
+                
+                if (OrderStatusEnum.REFUNDED.getValue().equals(order.getOrderStatus())) {
+                    messages.add(order.getOrderNo() + " 已退款，无法补单");
+                    continue;
+                }
+                
+                QueryOrderByOutTradeNoRequest queryRequest = new QueryOrderByOutTradeNoRequest();
+                queryRequest.setMchid(wxPayConfig.getMerchantId());
+                queryRequest.setOutTradeNo(order.getOrderNo());
+                
+                Transaction wxTransaction;
+                try {
+                    JsapiServiceExtension service = new JsapiServiceExtension.Builder()
+                            .config(config)
+                            .signType("RSA")
+                            .build();
+                    wxTransaction = service.queryOrderByOutTradeNo(queryRequest);
+                    log.info("查询微信订单成功，订单号：{}，微信交易状态：{}", order.getOrderNo(), wxTransaction.getTradeState());
+                } catch (ServiceException e) {
+                    log.error("查询微信订单失败，订单号：{}，错误码：{}，错误信息：{}", order.getOrderNo(), e.getErrorCode(), e.getErrorMessage());
+                    saveRepairRecord(order, null, RepairOrderTypeEnum.USER_QUERY.getValue(), 
+                            userId, null, 2, "查询微信订单失败：" + e.getErrorMessage());
+                    messages.add(order.getOrderNo() + " 查询微信订单失败：" + e.getErrorMessage());
+                    continue;
+                } catch (Exception e) {
+                    log.error("查询微信订单异常，订单号：{}，错误：", order.getOrderNo(), e);
+                    saveRepairRecord(order, null, RepairOrderTypeEnum.USER_QUERY.getValue(), 
+                            userId, null, 2, "查询微信订单异常：" + e.getMessage());
+                    messages.add(order.getOrderNo() + " 查询微信订单异常：" + e.getMessage());
+                    continue;
+                }
+                
+                if (Transaction.TradeStateEnum.SUCCESS != wxTransaction.getTradeState()) {
+                    log.info("微信订单未支付成功，订单号：{}，状态：{}", order.getOrderNo(), wxTransaction.getTradeStateDesc());
+                    saveRepairRecord(order, wxTransaction.getTransactionId(), RepairOrderTypeEnum.USER_QUERY.getValue(), 
+                            userId, null, 2, "微信订单未支付：" + wxTransaction.getTradeStateDesc());
+                    messages.add(order.getOrderNo() + " 未支付成功：" + wxTransaction.getTradeStateDesc());
+                    continue;
+                }
+                
+                boolean success = handlePayCallback(order.getOrderNo(), wxTransaction.getTransactionId(), wxTransaction);
+                
+                if (success) {
+                    saveRepairRecord(order, wxTransaction.getTransactionId(), RepairOrderTypeEnum.USER_QUERY.getValue(), 
+                            userId, null, 1, "补单成功");
+                    log.info("用户补单成功，订单号：{}", order.getOrderNo());
+                    successCount++;
+                } else {
+                    saveRepairRecord(order, wxTransaction.getTransactionId(), RepairOrderTypeEnum.USER_QUERY.getValue(), 
+                            userId, null, 2, "补单处理失败");
+                    messages.add(order.getOrderNo() + " 补单处理失败");
+                }
+            }
+            
+            if (successCount > 0) {
+                String msg = "补单成功，已更新 " + successCount + " 笔订单";
+                if (!messages.isEmpty()) {
+                    msg = msg + "。部分订单处理结果：" + String.join("；", messages);
+                }
+                return ResultUtils.success(msg);
+            } else {
+                String msg = messages.isEmpty() ? "未找到需要补单的订单" : String.join("；", messages);
+                return ResultUtils.error(ErrorCode.OPERATION_ERROR, msg);
+            }
+            
+        } catch (Exception e) {
+            log.error("用户补单异常，用户ID：{}，订单号：{}，错误：", userId, orderNo, e);
+            return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "补单失败：" + e.getMessage());
+        }
+    }
 
+    /**
+     * 管理员强制补单（不查询微信，直接补单）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResponse forceRepairOrderByAdmin(Long orderId, Long adminId, String adminName) {
+        log.info("管理员发起强制补单，订单ID：{}，管理员ID：{}", orderId, adminId);
+        
+        try {
+            // 1. 查询订单
+            PurchaseOrder order = purchaseOrderService.getById(orderId);
+            if (order == null) {
+                return ResultUtils.error(ErrorCode.NOT_FOUND_ERROR, "订单不存在");
+            }
+            
+            // 2. 校验订单状态
+            if (OrderStatusEnum.PAID.getValue().equals(order.getOrderStatus())) {
+                return ResultUtils.error(ErrorCode.OPERATION_ERROR, "订单已支付，无需补单");
+            }
+            
+            // 已退款的订单不能补单
+            if (OrderStatusEnum.REFUNDED.getValue().equals(order.getOrderStatus())) {
+                return ResultUtils.error(ErrorCode.OPERATION_ERROR, "订单已退款，无法补单");
+            }
+            
+            // 管理员强制补单支持所有未支付状态（待支付、已取消、已过期）
+            
+            // 3. 直接更新订单状态为已支付
+            order.setOrderStatus(OrderStatusEnum.PAID.getValue());
+            order.setTransactionId("ADMIN_FORCE_" + System.currentTimeMillis());
+            order.setPayTime(LocalDateTime.now());
+            order.setUpdateTime(LocalDateTime.now());
+            boolean updateResult = purchaseOrderService.updateById(order);
+            
+            if (!updateResult) {
+                log.error("管理员强制补单：更新订单状态失败，订单ID：{}", orderId);
+                saveRepairRecord(order, null, RepairOrderTypeEnum.ADMIN_FORCE.getValue(), 
+                        null, adminName, 2, "更新订单状态失败");
+                return ResultUtils.error(ErrorCode.OPERATION_ERROR, "更新订单状态失败");
+            }
+            
+            // 4. 查询订单明细并生成兑换码
+            List<OrderItem> orderItems = orderItemService.listByOrderId(order.getId());
+            if (orderItems == null || orderItems.isEmpty()) {
+                log.error("管理员强制补单：订单明细不存在，订单ID：{}", orderId);
+                saveRepairRecord(order, null, RepairOrderTypeEnum.ADMIN_FORCE.getValue(), 
+                        null, adminName, 2, "订单明细不存在");
+                return ResultUtils.error(ErrorCode.OPERATION_ERROR, "订单明细不存在");
+            }
+            
+            OrderItem firstItem = orderItems.get(0);
+            Product product = productService.getById(firstItem.getProductId());
+            if (product == null) {
+                log.error("管理员强制补单：商品不存在，商品ID：{}", firstItem.getProductId());
+                saveRepairRecord(order, null, RepairOrderTypeEnum.ADMIN_FORCE.getValue(), 
+                        null, adminName, 2, "商品不存在");
+                return ResultUtils.error(ErrorCode.OPERATION_ERROR, "商品不存在");
+            }
+            
+            // 5. 生成兑换码
+            try {
+                List<String> redemptionCodes = redemptionCodeService.generateRedemptionCodesForOrder(
+                        order.getId(), order.getUserId(), product, firstItem.getQuantity());
+                log.info("管理员强制补单：生成兑换码成功，订单ID：{}，兑换码数量：{}", orderId, redemptionCodes.size());
+                
+                // 6. 更新支付记录（如果存在）
+                QueryWrapper paymentQuery = QueryWrapper.create().where("order_no = ?", order.getOrderNo());
+                PaymentRecord paymentRecord = paymentRecordMapper.selectOneByQuery(paymentQuery);
+                if (paymentRecord != null) {
+                    paymentRecord.setPayStatus(1);
+                    paymentRecord.setTransactionId(order.getTransactionId());
+                    paymentRecord.setPayTime(LocalDateTime.now());
+                    paymentRecord.setIsCallbackProcessed(1);
+                    paymentRecord.setUpdateTime(LocalDateTime.now());
+                    paymentRecordMapper.update(paymentRecord);
+                }
+                
+                // 7. 记录补单成功
+                saveRepairRecord(order, order.getTransactionId(), RepairOrderTypeEnum.ADMIN_FORCE.getValue(), 
+                        null, adminName, 1, "管理员强制补单成功");
+                
+                log.info("管理员强制补单成功，订单ID：{}", orderId);
+                return ResultUtils.success("补单成功，兑换码已发放");
+                
+            } catch (Exception e) {
+                log.error("管理员强制补单：生成兑换码失败，订单ID：{}，错误：", orderId, e);
+                saveRepairRecord(order, null, RepairOrderTypeEnum.ADMIN_FORCE.getValue(), 
+                        null, adminName, 2, "生成兑换码失败：" + e.getMessage());
+                return ResultUtils.error(ErrorCode.OPERATION_ERROR, "生成兑换码失败");
+            }
+            
+        } catch (Exception e) {
+            log.error("管理员强制补单异常，订单ID：{}，错误：", orderId, e);
+            return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "补单失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存补单记录
+     */
+    private void saveRepairRecord(PurchaseOrder order, String transactionId, Integer repairType, 
+                                   Long userId, String adminName, Integer result, String resultMsg) {
+        try {
+            RepairOrderRecord record = RepairOrderRecord.builder()
+                    .orderId(order.getId())
+                    .orderNo(order.getOrderNo())
+                    .transactionId(transactionId)
+                    .repairType(repairType)
+                    .repairReason("用户/管理员发起补单")
+                    .operatorId(userId)
+                    .operatorName(adminName)
+                    .repairResult(result)
+                    .resultMsg(resultMsg)
+                    .createTime(LocalDateTime.now())
+                    .build();
+            repairOrderRecordMapper.insert(record);
+        } catch (Exception e) {
+            log.error("保存补单记录失败，订单号：{}，错误：", order.getOrderNo(), e);
+        }
+    }
+
+}

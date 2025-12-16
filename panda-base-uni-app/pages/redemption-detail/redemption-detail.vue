@@ -81,6 +81,20 @@
             <text class="verify-text">核销时请提供兑换记录号：{{ record.recordNo }}</text>
           </view>
         </view>
+        <!-- 联系客服按钮（新版API） -->
+        <view class="contact-service-btn" @click="handleContactServiceForVerify" hover-class="button-hover">
+          <text class="btn-emoji">💬</text>
+          <text>联系客服核销</text>
+        </view>
+      </view>
+      
+      <!-- 通用客服帮助区域 -->
+      <view class="service-help-section">
+        <text class="help-tip">对兑换有疑问？</text>
+        <view class="service-btn" @click="handleContactService" hover-class="button-hover">
+          <text class="service-emoji">💬</text>
+          <text>联系客服</text>
+        </view>
       </view>
 
       <!-- 次卡信息 TODO -->
@@ -98,6 +112,8 @@
 </template>
 
 <script>
+import { openCustomerServiceForRedemption } from '../../utils/customer-service.js';
+
 export default {
   data() {
     return {
@@ -192,6 +208,23 @@ export default {
     // 切换兑换码显示/隐藏
     toggleRedemptionCode() {
       this.showRedemptionCode = !this.showRedemptionCode;
+    },
+
+    // 联系客服（核销专用）
+    handleContactServiceForVerify() {
+      openCustomerServiceForRedemption({
+        id: this.record.id,
+        code: this.record.redemptionCode,
+        recordNo: this.record.recordNo
+      });
+    },
+
+    // 联系客服（通用）
+    handleContactService() {
+      openCustomerServiceForRedemption({
+        id: this.record.id,
+        code: this.record.redemptionCode
+      });
     }
   }
 }
@@ -413,6 +446,74 @@ export default {
   color: #666666;
   line-height: 1.6;
   flex: 1;
+}
+
+/* 联系客服按钮（实体商品核销专用） */
+.contact-service-btn {
+  width: 100%;
+  height: 80rpx;
+  background: linear-gradient(135deg, #4CAF50 0%, #297512 100%);
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: bold;
+  border-radius: 40rpx;
+  border: none;
+  line-height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-top: 30rpx;
+}
+
+.contact-service-btn::after {
+  border: none;
+}
+
+.btn-emoji {
+  margin-right: 8rpx;
+  font-size: 32rpx;
+}
+
+/* 通用客服帮助区域 */
+.service-help-section {
+  background-color: #ffffff;
+  padding: 30rpx;
+  margin-top: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.help-tip {
+  display: block;
+  font-size: 26rpx;
+  color: #999999;
+  margin-bottom: 20rpx;
+}
+
+.service-btn {
+  width: 100%;
+  height: 80rpx;
+  background: linear-gradient(135deg, #4CAF50 0%, #297512 100%);
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: bold;
+  border-radius: 40rpx;
+  border: none;
+  line-height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.service-btn::after {
+  border: none;
+}
+
+.service-emoji {
+  margin-right: 8rpx;
+  font-size: 32rpx;
 }
 
 /* TODO卡片 */

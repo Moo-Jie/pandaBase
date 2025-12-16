@@ -13,9 +13,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 补单记录表 实体类
+ * 补单记录表 实体类。
  *
- * @author DuRuiChi
+ * @author @author DuRuiChi
  */
 @Data
 @Builder
@@ -83,6 +83,3 @@ public class RepairOrderRecord implements Serializable {
      */
     private LocalDateTime createTime;
 }
-
-
-

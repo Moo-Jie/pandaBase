@@ -91,16 +91,26 @@
 						</view>
 						<text class="menu-arrow">›</text>
 					</view>
-					<view class="menu-item" @click="handleMenuClick('service')" hover-class="menu-hover">
+					<!-- 超级管理员功能：强制补单 -->
+					<view v-if="isSuperAdmin" class="menu-item" @click="handleMenuClick('adminRepair')" hover-class="menu-hover">
 						<view class="menu-left">
-							<text class="menu-emoji">💬</text>
-							<text class="menu-title">联系客服</text>
+							<text class="menu-emoji">🔧</text>
+							<text class="menu-title">强制补单</text>
 						</view>
 						<text class="menu-arrow">›</text>
 					</view>
+					<!-- 客服按钮：使用新版微信客服API（适配PC微信4.0.6+） -->
+          <view class="menu-item" @click="handleContactService" hover-class="menu-hover">
+            <view class="menu-left">
+              <text class="menu-emoji">💬</text>
+              <text class="menu-title">联系客服</text>
+            </view>
+            <text class="menu-arrow">›</text>
+          </view>
 				</view>
 			</view>
     </view>
+
 
   </view>
 </template>
@@ -110,6 +120,7 @@ import {getLoginUser, logout} from '../../api/user.js';
 import {getMyMembershipCards} from '../../api/membershipCard.js';
 import {redeemCode} from '../../api/redemption.js';
 import {isLoggedIn, getUserInfo, clearUserInfo} from '../../utils/auth.js';
+import {openCustomerServiceGeneral} from '../../utils/customer-service.js';
 
 export default {
   data() {
@@ -128,6 +139,10 @@ export default {
     // 判断是否为管理员
     isAdmin() {
       return this.userInfo && (this.userInfo.role === 2 || this.userInfo.role === 3);
+    },
+    // 判断是否为超级管理员
+    isSuperAdmin() {
+      return this.userInfo && this.userInfo.role === 3;
     }
   },
   onShow() {
@@ -291,16 +306,16 @@ export default {
             url: '/pages/export-report/export-report'
           });
           break;
+        case 'adminRepair':
+          // 超级管理员：强制补单
+          uni.navigateTo({
+            url: '/pages/admin-repair-order/admin-repair-order'
+          });
+          break;
         case 'exchange':
           // 已改为页面内直接兑换，不再跳转
           uni.showToast({
             title: '请在下方输入兑换码',
-            icon: 'none'
-          });
-          break;
-        case 'service':
-          uni.showToast({
-            title: '客服功能开发中',
             icon: 'none'
           });
           break;
@@ -396,6 +411,11 @@ export default {
         uni.hideLoading();
         console.error('兑换失败:', error);
       }
+    },
+
+    // 联系客服（新版API）
+    handleContactService() {
+      openCustomerServiceGeneral();
     }
   }
 }
@@ -704,6 +724,27 @@ export default {
 
 .menu-hover {
   background-color: #f5f5f5;
+}
+
+/* 重置button样式，使其看起来像普通menu-item */
+.menu-button-reset {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  background-color: #ffffff;
+  border-bottom: 1rpx solid #f0f0f0;
+  font-size: 30rpx;
+  color: #333333;
+  text-align: left;
+  border: none;
+  border-radius: 0;
+  line-height: normal;
+  margin: 0;
+}
+
+.menu-button-reset::after {
+  border: none;
 }
 
 .menu-left {

@@ -10,12 +10,14 @@
     "pages/my-cards/my-cards",
     "pages/my-orders/my-orders",
     "pages/order-detail/order-detail",
+    "pages/refund-detail/refund-detail",
     "pages/redeem/redeem",
     "pages/redemption-records/redemption-records",
     "pages/redemption-detail/redemption-detail",
     "pages/address-list/address-list",
     "pages/address-edit/address-edit",
-    "pages/export-report/export-report"
+    "pages/export-report/export-report",
+    "pages/admin-repair-order/admin-repair-order"
   ],
   "window": {
     "navigationBarTextStyle": "black",

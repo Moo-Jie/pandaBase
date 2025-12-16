@@ -50,6 +50,9 @@
 .status-2.data-v-71729483 {
   background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
 }
+.status-3.data-v-71729483 {
+  background: linear-gradient(135deg, #fff0f0 0%, #ffffff 100%);
+}
 .status-icon.data-v-71729483 {
   width: 120rpx;
   height: 120rpx;
@@ -75,6 +78,11 @@
   background-color: #f5f5f5;
   color: #999999;
   border: 4rpx solid #e0e0e0;
+}
+.status-3 .status-icon.data-v-71729483 {
+  background-color: #fff0f0;
+  color: #ff4d4f;
+  border: 4rpx solid #ff4d4f;
 }
 .status-text.data-v-71729483 {
   font-size: 36rpx;
@@ -133,6 +141,25 @@
   text-align: right;
   word-break: break-all;
   font-weight: 500;
+}
+.order-no-row.data-v-71729483 {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  justify-content: flex-end;
+}
+.order-no-copy-btn.data-v-71729483 {
+  height: 56rpx;
+  padding: 0 24rpx;
+  background-color: #ffffff;
+  color: #297512;
+  font-size: 24rpx;
+  border-radius: 28rpx;
+  border: 2rpx solid #297512;
+  line-height: 56rpx;
+}
+.order-no-copy-btn.data-v-71729483::after {
+  border: none;
 }
 
 /* 商品信息 */
@@ -360,6 +387,11 @@
   color: #666666;
   border: 2rpx solid #e0e0e0 !important;
 }
+.refund-btn.data-v-71729483 {
+  background-color: #ffffff;
+  color: #ff4d4f;
+  border: 2rpx solid #ff4d4f !important;
+}
 .pay-btn.data-v-71729483 {
   background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
   color: #ffffff;
@@ -372,6 +404,56 @@
   justify-content: center;
 }
 .btn-icon.data-v-71729483 {
+  margin-right: 8rpx;
+  font-size: 32rpx;
+}
+
+/* 客服帮助区域 */
+.service-section.data-v-71729483 {
+  background-color: #ffffff;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+.service-tip.data-v-71729483 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+  border-radius: 12rpx;
+  border-left: 4rpx solid #f5a623;
+}
+.tip-icon.data-v-71729483 {
+  font-size: 28rpx;
+  margin-right: 8rpx;
+}
+.tip-text.data-v-71729483 {
+  font-size: 26rpx;
+  color: #f5a623;
+  font-weight: 500;
+}
+.service-btn.data-v-71729483 {
+  width: 100%;
+  height: 80rpx;
+  background: linear-gradient(135deg, #4CAF50 0%, #297512 100%);
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: bold;
+  border-radius: 40rpx;
+  border: none;
+  line-height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.service-btn.data-v-71729483::after {
+  border: none;
+}
+.service-emoji.data-v-71729483 {
   margin-right: 8rpx;
   font-size: 32rpx;
 }

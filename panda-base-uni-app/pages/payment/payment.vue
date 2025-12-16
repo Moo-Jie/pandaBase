@@ -10,7 +10,10 @@
 				<view class="order-info">
 					<view class="info-row">
 						<text class="label">订单编号</text>
-						<text class="value">{{ orderNo }}</text>
+						<view class="order-no-row">
+							<text class="value">{{ orderNo }}</text>
+							<button class="order-no-copy-btn" @click="handleCopyOrderNo" hover-class="button-hover">复制</button>
+						</view>
 					</view>
 					<view class="info-row">
 						<text class="label">商品名称</text>
@@ -102,6 +105,27 @@ export default {
 		}
 	},
 	methods: {
+		handleCopyOrderNo() {
+			if (!this.orderNo) {
+				return;
+			}
+			uni.setClipboardData({
+				data: this.orderNo,
+				success: () => {
+					uni.showToast({
+						title: '订单号已复制',
+						icon: 'success'
+					});
+				},
+				fail: () => {
+					uni.showToast({
+						title: '复制失败',
+						icon: 'none'
+					});
+				}
+			});
+		},
+		
 		// 处理支付
 		async handlePay() {
 			if (!this.orderId) {
@@ -247,10 +271,32 @@ export default {
 	color: #999999;
 }
 
-.value {
+.info-row .value {
 	font-size: 28rpx;
 	color: #333333;
 	font-weight: 500;
+}
+
+.order-no-row {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 16rpx;
+}
+
+.order-no-copy-btn {
+	height: 56rpx;
+	padding: 0 24rpx;
+	background-color: #ffffff;
+	color: #297512;
+	font-size: 24rpx;
+	border-radius: 28rpx;
+	border: 2rpx solid #297512;
+	line-height: 56rpx;
+}
+
+.order-no-copy-btn::after {
+	border: none;
 }
 
 /* 支付金额 */

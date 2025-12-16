@@ -2,6 +2,7 @@
 const common_vendor = require("../../common/vendor.js");
 const api_product = require("../../api/product.js");
 const utils_auth = require("../../utils/auth.js");
+const utils_customerService = require("../../utils/customer-service.js");
 const _sfc_main = {
   data() {
     return {
@@ -27,7 +28,7 @@ const _sfc_main = {
         common_vendor.index.hideLoading();
       } catch (error) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/product-detail/product-detail.vue:99", "加载商品详情失败:", error);
+        common_vendor.index.__f__("error", "at pages/product-detail/product-detail.vue:111", "加载商品详情失败:", error);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -62,6 +63,13 @@ const _sfc_main = {
       common_vendor.index.navigateTo({
         url: `/pages/confirm-order/confirm-order?productId=${this.productId}`
       });
+    },
+    // 联系客服（新版API）
+    handleContactService() {
+      utils_customerService.openCustomerServiceForProduct({
+        id: this.product.id,
+        name: this.product.name
+      });
     }
   }
 };
@@ -81,7 +89,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     i: common_vendor.t($data.product.validityDays)
   } : {}, {
     j: common_vendor.t($data.product.stock || 0),
-    k: common_vendor.o((...args) => $options.handleBuy && $options.handleBuy(...args))
+    k: common_vendor.o((...args) => $options.handleContactService && $options.handleContactService(...args)),
+    l: common_vendor.o((...args) => $options.handleBuy && $options.handleBuy(...args))
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-4d4a2bad"]]);

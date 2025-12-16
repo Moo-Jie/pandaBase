@@ -75,5 +75,22 @@ public interface WxMiniappPayService {
      * @return
      */
     String refundNotify(HttpServletRequest request);
+
+    /**
+     * 用户补单（查询微信支付状态并补单）
+     * @param userId 用户ID
+     * @param orderNo 订单编号（可选，不传则查询最近的待支付订单）
+     * @return 补单结果
+     */
+    BaseResponse repairOrderByUser(Long userId, String orderNo);
+
+    /**
+     * 管理员强制补单（不查询微信，直接补单）
+     * @param orderId 订单ID
+     * @param adminId 管理员ID
+     * @param adminName 管理员名称
+     * @return 补单结果
+     */
+    BaseResponse forceRepairOrderByAdmin(Long orderId, Long adminId, String adminName);
 }
 

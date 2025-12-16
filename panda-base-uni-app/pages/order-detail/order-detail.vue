@@ -17,7 +17,10 @@
 				<view class="info-list">
 					<view class="info-item">
 						<text class="label">订单编号</text>
-						<text class="value">{{ order.orderNo }}</text>
+						<view class="order-no-row">
+							<text class="value">{{ order.orderNo }}</text>
+							<button class="order-no-copy-btn" @click="handleCopyOrderNo" hover-class="button-hover">复制</button>
+						</view>
 					</view>
 					<view class="info-item">
 						<text class="label">创建时间</text>
@@ -80,6 +83,24 @@
 				</view>
 			</view>
 			
+			<!-- 客服帮助区域 -->
+			<view class="service-section">
+				<!-- 已退款订单特殊提示 -->
+				<view class="service-tip" v-if="order.orderStatus === 3">
+					<text class="tip-icon">💰</text>
+					<text class="tip-text">未收到退款或对订单有疑惑？</text>
+				</view>
+				<!-- 所有订单通用提示 -->
+				<view class="service-tip" v-else>
+					<text class="tip-text">对订单有疑惑？</text>
+				</view>
+				<!-- 使用新版微信客服API（适配PC微信4.0.6+） -->
+				<view class="service-btn" @click="handleContactService" hover-class="button-hover">
+					<text class="service-emoji">💬</text>
+					<text>联系客服</text>
+				</view>
+			</view>
+			
 			<!-- 兑换码信息 -->
 			<view class="redemption-section" v-if="order.orderStatus === 1 && order.redemptionCodes && order.redemptionCodes.length > 0">
 				<view class="section-title">
@@ -119,6 +140,7 @@
 		
 		<!-- 已完成订单的操作栏 -->
 		<view class="bottom-bar" v-if="order.orderStatus === 1">
+			<button class="action-btn refund-btn" @click="handleRefund" hover-class="button-hover">申请退款</button>
 			<button class="action-btn reorder-btn" @click="handleReorder" hover-class="button-hover">
 				<text class="btn-icon">🔄</text>
 				<text>再来一单</text>
@@ -129,6 +151,7 @@
 
 <script>
 import { getOrderDetail, cancelOrder as cancelOrderApi } from '../../api/order.js';
+import { openCustomerServiceForOrder } from '../../utils/customer-service.js';
 
 export default {
 	data() {
@@ -141,6 +164,11 @@ export default {
 	onLoad(options) {
 		if (options.id) {
 			this.orderId = options.id;
+			this.loadOrderDetail();
+		}
+	},
+	onShow() {
+		if (this.orderId) {
 			this.loadOrderDetail();
 		}
 	},
@@ -176,6 +204,8 @@ export default {
 					return '✓'; // 简约的对勾
 				case 2:
 					return '×'; // 简约的叉号
+				case 3:
+					return '💸'; // 退款
 				default:
 					return '●';
 			}
@@ -249,6 +279,13 @@ export default {
 			});
 		},
 		
+		// 申请退款
+		handleRefund() {
+			uni.navigateTo({
+				url: `/pages/refund-detail/refund-detail?orderId=${this.order.id}`
+			});
+		},
+		
 		// 复制兑换码
 		handleCopyCode(code) {
 			uni.setClipboardData({
@@ -256,6 +293,27 @@ export default {
 				success: () => {
 					uni.showToast({
 						title: '兑换码已复制',
+						icon: 'success'
+					});
+				},
+				fail: () => {
+					uni.showToast({
+						title: '复制失败',
+						icon: 'none'
+					});
+				}
+			});
+		},
+		
+		handleCopyOrderNo() {
+			if (!this.order || !this.order.orderNo) {
+				return;
+			}
+			uni.setClipboardData({
+				data: this.order.orderNo,
+				success: () => {
+					uni.showToast({
+						title: '订单号已复制',
 						icon: 'success'
 					});
 				},
@@ -305,6 +363,15 @@ export default {
 		maskCode(code) {
 			if (!code || code.length <= 4) return '****';
 			return code.substring(0, 2) + '****' + code.substring(code.length - 2);
+		},
+		
+		// 联系客服（新版API）
+		handleContactService() {
+			openCustomerServiceForOrder({
+				orderNo: this.order.orderNo,
+				orderStatus: this.order.orderStatus,
+				totalAmount: this.order.totalAmount
+			});
 		}
 	}
 }
@@ -342,6 +409,10 @@ export default {
 	background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
 }
 
+.status-3 {
+	background: linear-gradient(135deg, #fff0f0 0%, #ffffff 100%);
+}
+
 .status-icon {
 	width: 120rpx;
 	height: 120rpx;
@@ -370,6 +441,12 @@ export default {
 	background-color: #f5f5f5;
 	color: #999999;
 	border: 4rpx solid #e0e0e0;
+}
+
+.status-3 .status-icon {
+	background-color: #fff0f0;
+	color: #ff4d4f;
+	border: 4rpx solid #ff4d4f;
 }
 
 .status-text {
@@ -436,6 +513,28 @@ export default {
 	text-align: right;
 	word-break: break-all;
 	font-weight: 500;
+}
+
+.order-no-row {
+	display: flex;
+	align-items: center;
+	gap: 16rpx;
+	justify-content: flex-end;
+}
+
+.order-no-copy-btn {
+	height: 56rpx;
+	padding: 0 24rpx;
+	background-color: #ffffff;
+	color: #297512;
+	font-size: 24rpx;
+	border-radius: 28rpx;
+	border: 2rpx solid #297512;
+	line-height: 56rpx;
+}
+
+.order-no-copy-btn::after {
+	border: none;
 }
 
 /* 商品信息 */
@@ -698,6 +797,12 @@ export default {
 	border: 2rpx solid #e0e0e0 !important;
 }
 
+.refund-btn {
+	background-color: #ffffff;
+	color: #ff4d4f;
+	border: 2rpx solid #ff4d4f !important;
+}
+
 .pay-btn {
 	background: linear-gradient(135deg, #a8e063 0%, #297512 100%);
 	color: #ffffff;
@@ -716,7 +821,64 @@ export default {
 	font-size: 32rpx;
 }
 
+/* 客服帮助区域 */
+.service-section {
+	background-color: #ffffff;
+	padding: 30rpx;
+	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	text-align: center;
+}
+
+.service-tip {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 20rpx;
+	padding: 20rpx;
+	background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+	border-radius: 12rpx;
+	border-left: 4rpx solid #f5a623;
+}
+
+.tip-icon {
+	font-size: 28rpx;
+	margin-right: 8rpx;
+}
+
+.tip-text {
+	font-size: 26rpx;
+	color: #f5a623;
+	font-weight: 500;
+}
+
+.service-btn {
+	width: 100%;
+	height: 80rpx;
+	background: linear-gradient(135deg, #4CAF50 0%, #297512 100%);
+	color: #ffffff;
+	font-size: 30rpx;
+	font-weight: bold;
+	border-radius: 40rpx;
+	border: none;
+	line-height: 80rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+}
+
+.service-btn::after {
+	border: none;
+}
+
+.service-emoji {
+	margin-right: 8rpx;
+	font-size: 32rpx;
+}
+
 .button-hover {
 	opacity: 0.85;
 }
+
 </style>

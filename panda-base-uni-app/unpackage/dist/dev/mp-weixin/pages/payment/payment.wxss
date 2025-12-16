@@ -70,10 +70,29 @@
   font-size: 28rpx;
   color: #999999;
 }
-.value.data-v-eade9ab2 {
+.info-row .value.data-v-eade9ab2 {
   font-size: 28rpx;
   color: #333333;
   font-weight: 500;
+}
+.order-no-row.data-v-eade9ab2 {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16rpx;
+}
+.order-no-copy-btn.data-v-eade9ab2 {
+  height: 56rpx;
+  padding: 0 24rpx;
+  background-color: #ffffff;
+  color: #297512;
+  font-size: 24rpx;
+  border-radius: 28rpx;
+  border: 2rpx solid #297512;
+  line-height: 56rpx;
+}
+.order-no-copy-btn.data-v-eade9ab2::after {
+  border: none;
 }
 
 /* 支付金额 */

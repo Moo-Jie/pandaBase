@@ -4,6 +4,7 @@ const api_user = require("../../api/user.js");
 const api_membershipCard = require("../../api/membershipCard.js");
 const api_redemption = require("../../api/redemption.js");
 const utils_auth = require("../../utils/auth.js");
+const utils_customerService = require("../../utils/customer-service.js");
 const common_assets = require("../../common/assets.js");
 const _sfc_main = {
   data() {
@@ -25,6 +26,10 @@ const _sfc_main = {
     // 判断是否为管理员
     isAdmin() {
       return this.userInfo && (this.userInfo.role === 2 || this.userInfo.role === 3);
+    },
+    // 判断是否为超级管理员
+    isSuperAdmin() {
+      return this.userInfo && this.userInfo.role === 3;
     }
   },
   onShow() {
@@ -57,7 +62,7 @@ const _sfc_main = {
           }
           await this.loadMembershipCards();
         } catch (error) {
-          common_vendor.index.__f__("error", "at pages/personal/personal.vue:176", "获取用户信息失败:", error);
+          common_vendor.index.__f__("error", "at pages/personal/personal.vue:191", "获取用户信息失败:", error);
           this.isLoggedIn = false;
           utils_auth.clearUserInfo();
         }
@@ -102,7 +107,7 @@ const _sfc_main = {
           this.validityDate = "";
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/personal/personal.vue:235", "获取会员卡信息失败:", error);
+        common_vendor.index.__f__("error", "at pages/personal/personal.vue:250", "获取会员卡信息失败:", error);
       }
     },
     // 格式化日期
@@ -157,15 +162,14 @@ const _sfc_main = {
             url: "/pages/export-report/export-report"
           });
           break;
+        case "adminRepair":
+          common_vendor.index.navigateTo({
+            url: "/pages/admin-repair-order/admin-repair-order"
+          });
+          break;
         case "exchange":
           common_vendor.index.showToast({
             title: "请在下方输入兑换码",
-            icon: "none"
-          });
-          break;
-        case "service":
-          common_vendor.index.showToast({
-            title: "客服功能开发中",
             icon: "none"
           });
           break;
@@ -190,7 +194,7 @@ const _sfc_main = {
                 icon: "success"
               });
             } catch (error) {
-              common_vendor.index.__f__("error", "at pages/personal/personal.vue:329", "退出登录失败:", error);
+              common_vendor.index.__f__("error", "at pages/personal/personal.vue:344", "退出登录失败:", error);
               utils_auth.clearUserInfo();
               this.isLoggedIn = false;
               this.userInfo = {};
@@ -201,7 +205,7 @@ const _sfc_main = {
     },
     // 获取会员卡背景图片
     getMembershipCardImage() {
-      common_vendor.index.__f__("log", "at pages/personal/personal.vue:342", "当前会员卡类型:", this.membershipCardType);
+      common_vendor.index.__f__("log", "at pages/personal/personal.vue:357", "当前会员卡类型:", this.membershipCardType);
       if (this.membershipCardType === 1) {
         return "/static/images/年卡VIP3.png";
       } else if (this.membershipCardType === 2) {
@@ -242,8 +246,12 @@ const _sfc_main = {
         }, 1500);
       } catch (error) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/personal/personal.vue:397", "兑换失败:", error);
+        common_vendor.index.__f__("error", "at pages/personal/personal.vue:412", "兑换失败:", error);
       }
+    },
+    // 联系客服（新版API）
+    handleContactService() {
+      utils_customerService.openCustomerServiceGeneral();
     }
   }
 };
@@ -279,7 +287,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, $options.isAdmin ? {
     v: common_vendor.o(($event) => $options.handleMenuClick("export"))
   } : {}, {
-    w: common_vendor.o(($event) => $options.handleMenuClick("service"))
+    w: $options.isSuperAdmin
+  }, $options.isSuperAdmin ? {
+    x: common_vendor.o(($event) => $options.handleMenuClick("adminRepair"))
+  } : {}, {
+    y: common_vendor.o((...args) => $options.handleContactService && $options.handleContactService(...args))
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-6ae23533"]]);

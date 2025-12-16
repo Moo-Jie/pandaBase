@@ -91,7 +91,7 @@ public class PurchaseOrder implements Serializable {
     private BigDecimal payAmount;
 
     /**
-     * 订单状态 0-待支付 1-已支付 2-已取消 3-已退款
+     * 订单状态 0-待支付 1-已支付 2-已取消 3-已退款 4-已过期
      */
     private Integer orderStatus;
 
@@ -119,6 +119,21 @@ public class PurchaseOrder implements Serializable {
      * 微信支付交易号
      */
     private String transactionId;
+
+    /**
+     * 退款单号
+     */
+    private String refundNo;
+
+    /**
+     * 退款时间
+     */
+    private LocalDateTime refundTime;
+
+    /**
+     * 退款金额
+     */
+    private BigDecimal refundAmount;
 
     /**
      * 创建时间

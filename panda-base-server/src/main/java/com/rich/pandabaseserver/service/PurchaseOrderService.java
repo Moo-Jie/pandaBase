@@ -71,4 +71,14 @@ public interface PurchaseOrderService extends IService<PurchaseOrder> {
      * @return 是否已购买
      */
     Boolean checkUserPurchased(Long userId, Long productId);
+
+    /**
+     * 申请退款
+     *
+     * @param orderId 订单ID
+     * @param userId 用户ID
+     * @param reason 退款原因
+     * @return 是否成功
+     */
+    Boolean refundOrder(Long orderId, Long userId, String reason);
 }

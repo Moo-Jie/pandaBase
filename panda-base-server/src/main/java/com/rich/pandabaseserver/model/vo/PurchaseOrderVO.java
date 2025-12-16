@@ -140,6 +140,24 @@ public class PurchaseOrderVO implements Serializable {
     private String transactionId;
 
     /**
+     * 退款单号
+     */
+    @Schema(description = "退款单号")
+    private String refundNo;
+
+    /**
+     * 退款时间
+     */
+    @Schema(description = "退款时间")
+    private LocalDateTime refundTime;
+
+    /**
+     * 退款金额
+     */
+    @Schema(description = "退款金额")
+    private BigDecimal refundAmount;
+
+    /**
      * 创建时间
      */
     @Schema(description = "创建时间")

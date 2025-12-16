@@ -34,6 +34,14 @@ export function cancelOrder(orderId) {
 }
 
 /**
+ * 申请退款
+ * @param {Object} data 退款请求 { orderId, reason }
+ */
+export function refundOrder(data) {
+	return post('/order/refund', data);
+}
+
+/**
  * 分页查询我的订单
  * @param {Object} params 查询参数
  */
@@ -49,3 +57,17 @@ export function getOrderDetail(id) {
 	return get(`/order/get/vo/${id}`, {});
 }
 
+/**
+ * 用户补单（已支付但未显示）
+ */
+export function repairOrder() {
+	return post('/wxMiniappPay/repairOrder', {});
+}
+
+/**
+ * 超级管理员强制补单
+ * @param {Object} data { orderId, reason }
+ */
+export function adminForceRepair(data) {
+	return post('/order/admin/forceRepair', data);
+}

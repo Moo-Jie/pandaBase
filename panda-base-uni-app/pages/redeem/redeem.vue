@@ -33,6 +33,16 @@
 				<text class="tip-item">• 虚拟商品兑换后自动生成会员卡</text>
 				<text class="tip-item">• 实物商品需填写收货地址</text>
 				<text class="tip-item">• 兑换码有效期为1年，请及时使用</text>
+				<text class="tip-item">• 如有疑问，请联系客服咨询</text>
+			</view>
+			
+			<!-- 客服帮助 -->
+			<view class="service-section">
+				<text class="service-tip">兑换遇到问题？</text>
+				<view class="service-btn" @click="handleContactService" hover-class="button-hover">
+					<text class="service-emoji">💬</text>
+					<text>联系客服</text>
+				</view>
 			</view>
 		</view>
 		
@@ -45,6 +55,7 @@
 
 <script>
 import { redeemCode } from '../../api/redemption.js';
+import { openCustomerServiceForRedemption } from '../../utils/customer-service.js';
 
 export default {
 	data() {
@@ -112,6 +123,13 @@ export default {
 			} finally {
 				this.redeeming = false;
 			}
+		},
+		
+		// 联系客服（新版API）
+		handleContactService() {
+			openCustomerServiceForRedemption({
+				code: this.code || ''
+			});
 		}
 	}
 }
@@ -264,6 +282,48 @@ export default {
 
 .redeem-btn::after {
 	border: none;
+}
+
+/* 客服帮助区域 */
+.service-section {
+	background-color: #ffffff;
+	padding: 30rpx;
+	margin: 20rpx 30rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	border-radius: 16rpx;
+	text-align: center;
+}
+
+.service-tip {
+	display: block;
+	font-size: 26rpx;
+	color: #999999;
+	margin-bottom: 20rpx;
+}
+
+.service-btn {
+	width: 100%;
+	height: 80rpx;
+	background: linear-gradient(135deg, #4CAF50 0%, #297512 100%);
+	color: #ffffff;
+	font-size: 30rpx;
+	font-weight: bold;
+	border-radius: 40rpx;
+	border: none;
+	line-height: 80rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+}
+
+.service-btn::after {
+	border: none;
+}
+
+.service-emoji {
+	margin-right: 8rpx;
+	font-size: 32rpx;
 }
 
 .button-hover {

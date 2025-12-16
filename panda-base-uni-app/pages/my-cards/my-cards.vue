@@ -124,13 +124,31 @@ export default {
 		handleProductClick(item) {
 			if (item.type === 4) {
 				// 实体商品：提示联系客服
-				const content = `|商品名称：${item.name}\n\n|商品数量：${item.quantity} 件\n\n| 核销方式：\n请联系客服出示当前凭证进行线下兑换\n\n| 客服热线：400-656-00555`;
+				const content = `商品名称：${item.name}\n\n商品数量：${item.quantity} 件\n\n核销方式：\n请联系客服出示当前凭证进行线下兑换`;
 				
 				uni.showModal({
 					title: '实体商品详情',
 					content: content,
-					confirmText: '我知道了',
-					showCancel: false
+					confirmText: '联系客服',
+					cancelText: '我知道了',
+					success: (res) => {
+						if (res.confirm) {
+							// 用户点击"联系客服"
+							// 由于showModal无法直接使用open-type，这里提示用户去个人中心
+							uni.showModal({
+								title: '提示',
+								content: '请通过个人中心-联系客服功能联系客服进行核销',
+								confirmText: '去个人中心',
+								success: (modalRes) => {
+									if (modalRes.confirm) {
+										uni.switchTab({
+											url: '/pages/personal/personal'
+										});
+									}
+								}
+							});
+						}
+					}
 				});
 			} else {
 				// 会员卡：显示详情

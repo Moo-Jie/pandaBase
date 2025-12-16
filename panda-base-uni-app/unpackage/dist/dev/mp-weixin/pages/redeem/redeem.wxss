@@ -155,6 +155,44 @@
 .redeem-btn.data-v-3315cc4a::after {
   border: none;
 }
+
+/* 客服帮助区域 */
+.service-section.data-v-3315cc4a {
+  background-color: #ffffff;
+  padding: 30rpx;
+  margin: 20rpx 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  border-radius: 16rpx;
+  text-align: center;
+}
+.service-tip.data-v-3315cc4a {
+  display: block;
+  font-size: 26rpx;
+  color: #999999;
+  margin-bottom: 20rpx;
+}
+.service-btn.data-v-3315cc4a {
+  width: 100%;
+  height: 80rpx;
+  background: linear-gradient(135deg, #4CAF50 0%, #297512 100%);
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: bold;
+  border-radius: 40rpx;
+  border: none;
+  line-height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.service-btn.data-v-3315cc4a::after {
+  border: none;
+}
+.service-emoji.data-v-3315cc4a {
+  margin-right: 8rpx;
+  font-size: 32rpx;
+}
 .button-hover.data-v-3315cc4a {
   opacity: 0.85;
 }

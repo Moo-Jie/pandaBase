@@ -13,3 +13,15 @@ public interface StockChangeLogMapper extends BaseMapper<StockChangeLog> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+

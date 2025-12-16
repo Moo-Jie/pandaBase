@@ -12,12 +12,14 @@ if (!Math) {
   "./pages/my-cards/my-cards.js";
   "./pages/my-orders/my-orders.js";
   "./pages/order-detail/order-detail.js";
+  "./pages/refund-detail/refund-detail.js";
   "./pages/redeem/redeem.js";
   "./pages/redemption-records/redemption-records.js";
   "./pages/redemption-detail/redemption-detail.js";
   "./pages/address-list/address-list.js";
   "./pages/address-edit/address-edit.js";
   "./pages/export-report/export-report.js";
+  "./pages/admin-repair-order/admin-repair-order.js";
 }
 const _sfc_main = {
   onLaunch: function() {

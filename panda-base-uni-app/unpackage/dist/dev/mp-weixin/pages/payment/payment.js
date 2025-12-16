@@ -34,6 +34,26 @@ const _sfc_main = {
     }
   },
   methods: {
+    handleCopyOrderNo() {
+      if (!this.orderNo) {
+        return;
+      }
+      common_vendor.index.setClipboardData({
+        data: this.orderNo,
+        success: () => {
+          common_vendor.index.showToast({
+            title: "订单号已复制",
+            icon: "success"
+          });
+        },
+        fail: () => {
+          common_vendor.index.showToast({
+            title: "复制失败",
+            icon: "none"
+          });
+        }
+      });
+    },
     // 处理支付
     async handlePay() {
       if (!this.orderId) {
@@ -58,16 +78,25 @@ const _sfc_main = {
           payParams.addressId = this.addressId;
         }
         const wxPayData = await api_order.createWxPayOrder(payParams);
+        common_vendor.index.__f__("log", "at pages/payment/payment.vue:159", "获取到的支付参数:", wxPayData);
         await new Promise((resolve, reject) => {
-          common_vendor.index.requestPayment({
-            timeStamp: wxPayData.timeStamp,
+          const paymentOption = {
+            timeStamp: String(wxPayData.timeStamp),
             nonceStr: wxPayData.nonceStr,
             package: wxPayData.packageVal,
             signType: wxPayData.signType || "RSA",
             paySign: wxPayData.paySign,
-            success: () => resolve(),
-            fail: (err) => reject(err)
-          });
+            success: (res) => {
+              common_vendor.index.__f__("log", "at pages/payment/payment.vue:170", "requestPayment 成功:", res);
+              resolve(res);
+            },
+            fail: (err) => {
+              common_vendor.index.__f__("error", "at pages/payment/payment.vue:174", "requestPayment 失败:", err);
+              reject(err);
+            }
+          };
+          common_vendor.index.__f__("log", "at pages/payment/payment.vue:178", "发起支付参数:", paymentOption);
+          common_vendor.index.requestPayment(paymentOption);
         });
         common_vendor.index.hideLoading();
         common_vendor.index.showModal({
@@ -89,7 +118,7 @@ const _sfc_main = {
         });
       } catch (error) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/payment/payment.vue:172", "支付失败:", error);
+        common_vendor.index.__f__("error", "at pages/payment/payment.vue:205", "支付失败:", error);
         common_vendor.index.showToast({
           title: error && error.errMsg || error.message || "支付失败",
           icon: "none",
@@ -104,12 +133,13 @@ const _sfc_main = {
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return {
     a: common_vendor.t($data.orderNo),
-    b: common_vendor.t($data.productName),
-    c: common_vendor.t($data.quantity),
-    d: common_vendor.t($data.payAmount),
+    b: common_vendor.o((...args) => $options.handleCopyOrderNo && $options.handleCopyOrderNo(...args)),
+    c: common_vendor.t($data.productName),
+    d: common_vendor.t($data.quantity),
     e: common_vendor.t($data.payAmount),
-    f: common_vendor.o((...args) => $options.handlePay && $options.handlePay(...args)),
-    g: $data.paying
+    f: common_vendor.t($data.payAmount),
+    g: common_vendor.o((...args) => $options.handlePay && $options.handlePay(...args)),
+    h: $data.paying
   };
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-eade9ab2"]]);

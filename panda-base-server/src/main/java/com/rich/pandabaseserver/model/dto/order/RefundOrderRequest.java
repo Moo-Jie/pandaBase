@@ -2,35 +2,40 @@ package com.rich.pandabaseserver.model.dto.order;
 
 import lombok.Data;
 
-import java.math.BigDecimal;
+import java.io.Serializable;
 
 /**
- * <p>
- * 退款订单请求参数
- * </p>
+ * 退款请求
  *
-
- * @date 2024/9/30 19:19
+ * @author DuRuiChi
  */
 @Data
-public class RefundOrderRequest {
+public class RefundOrderRequest implements Serializable {
+
     /**
-     * 订单号：业务侧的订单号
+     * 订单ID
      */
-    private String transactionId;
+    private Long orderId;
+
     /**
      * 商户订单号
      */
     private String outTradeNo;
 
     /**
-     * 原订单金额 说明：原支付交易的订单总金额，这里单位为元。
+     * 订单总金额
      */
-    private BigDecimal totalAmount;
+    private java.math.BigDecimal totalAmount;
 
     /**
-     * 退款金额 说明：退款金额，这里单位为元，不能超过原订单支付金额。
+     * 退款金额
      */
-    private BigDecimal refundAmount;
-}
+    private java.math.BigDecimal refundAmount;
 
+    /**
+     * 退款原因
+     */
+    private String reason;
+
+    private static final long serialVersionUID = 1L;
+}

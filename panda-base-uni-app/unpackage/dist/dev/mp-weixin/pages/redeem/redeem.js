@@ -1,6 +1,7 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const api_redemption = require("../../api/redemption.js");
+const utils_customerService = require("../../utils/customer-service.js");
 const _sfc_main = {
   data() {
     return {
@@ -50,10 +51,16 @@ const _sfc_main = {
         this.code = "";
       } catch (error) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/redeem/redeem.vue:110", "兑换失败:", error);
+        common_vendor.index.__f__("error", "at pages/redeem/redeem.vue:121", "兑换失败:", error);
       } finally {
         this.redeeming = false;
       }
+    },
+    // 联系客服（新版API）
+    handleContactService() {
+      utils_customerService.openCustomerServiceForRedemption({
+        code: this.code || ""
+      });
     }
   }
 };
@@ -61,9 +68,10 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return {
     a: $data.code,
     b: common_vendor.o(($event) => $data.code = $event.detail.value),
-    c: common_vendor.o((...args) => $options.handleRedeem && $options.handleRedeem(...args)),
-    d: $data.redeeming,
-    e: !$data.code.trim()
+    c: common_vendor.o((...args) => $options.handleContactService && $options.handleContactService(...args)),
+    d: common_vendor.o((...args) => $options.handleRedeem && $options.handleRedeem(...args)),
+    e: $data.redeeming,
+    f: !$data.code.trim()
   };
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-3315cc4a"]]);

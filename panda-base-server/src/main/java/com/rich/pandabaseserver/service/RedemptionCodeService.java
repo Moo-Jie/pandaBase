@@ -64,4 +64,20 @@ public interface RedemptionCodeService extends IService<RedemptionCode> {
      * @return 兑换码列表
      */
     List<String> getRedemptionCodesByOrderId(Long orderId);
+
+    /**
+     * 作废订单关联的兑换码
+     *
+     * @param orderId 订单ID
+     * @param reason 作废原因
+     */
+    void voidRedemptionCodesByOrderId(Long orderId, String reason);
+
+    /**
+     * 检查订单关联的兑换码是否已使用
+     *
+     * @param orderId 订单ID
+     * @return 是否已使用
+     */
+    boolean hasUsedRedemptionCode(Long orderId);
 }

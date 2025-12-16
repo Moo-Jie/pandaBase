@@ -23,7 +23,12 @@ public enum RedemptionCodeStatusEnum {
     /**
      * 已过期
      */
-    EXPIRED(2, "已过期");
+    EXPIRED(2, "已过期"),
+
+    /**
+     * 已作废
+     */
+    VOID(3, "已作废");
 
     private final Integer value;
     private final String text;

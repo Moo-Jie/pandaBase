@@ -69,19 +69,33 @@ const _sfc_main = {
     // 处理商品点击
     handleProductClick(item) {
       if (item.type === 4) {
-        const content = `|商品名称：${item.name}
+        const content = `商品名称：${item.name}
 
-|商品数量：${item.quantity} 件
+商品数量：${item.quantity} 件
 
-| 核销方式：
-请联系客服出示当前凭证进行线下兑换
-
-| 客服热线：400-656-00555`;
+核销方式：
+请联系客服出示当前凭证进行线下兑换`;
         common_vendor.index.showModal({
           title: "实体商品详情",
           content,
-          confirmText: "我知道了",
-          showCancel: false
+          confirmText: "联系客服",
+          cancelText: "我知道了",
+          success: (res) => {
+            if (res.confirm) {
+              common_vendor.index.showModal({
+                title: "提示",
+                content: "请通过个人中心-联系客服功能联系客服进行核销",
+                confirmText: "去个人中心",
+                success: (modalRes) => {
+                  if (modalRes.confirm) {
+                    common_vendor.index.switchTab({
+                      url: "/pages/personal/personal"
+                    });
+                  }
+                }
+              });
+            }
+          }
         });
       } else {
         const emoji = item.type === 1 ? "👑" : item.type === 2 ? "💎" : "🎫";

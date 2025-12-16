@@ -148,5 +148,25 @@ public class WxMiniappPayController {
         log.info("------微信支付微信小程序退款回调------");
         return ResultUtils.success(this.wxMiniappPayService.refundNotify(request));
     }
+
+    /**
+     * 用户补单（查询微信支付并补单）
+     * <pre>
+     *     当用户已支付但未收到兑换码时，可以调用此接口进行补单
+     *     系统会查询微信官方的支付状态，如果确认已支付则补发兑换码
+     * </pre>
+     *
+     * @param request HTTP请求
+     * @return 补单结果
+     */
+    @PostMapping("/repairOrder")
+    public BaseResponse repairOrder(HttpServletRequest request) {
+        log.info("------用户发起补单请求------");
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+        
+        // 查询用户最近的待支付或已过期订单进行补单
+        return this.wxMiniappPayService.repairOrderByUser(loginUser.getId(), null);
+    }
 }
 

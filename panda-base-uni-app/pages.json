@@ -81,6 +81,14 @@
 			}
 		},
 		{
+			"path": "pages/refund-detail/refund-detail",
+			"style": {
+				"navigationBarTitleText": "申请退款",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
 			"path": "pages/redeem/redeem",
 			"style": {
 				"navigationBarTitleText": "礼品兑换",
@@ -124,6 +132,14 @@
 			"path": "pages/export-report/export-report",
 			"style": {
 				"navigationBarTitleText": "导出报表",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/admin-repair-order/admin-repair-order",
+			"style": {
+				"navigationBarTitleText": "管理员补单",
 				"navigationBarBackgroundColor": "#ffffff",
 				"navigationBarTextStyle": "black"
 			}

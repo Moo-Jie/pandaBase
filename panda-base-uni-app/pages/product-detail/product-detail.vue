@@ -49,9 +49,20 @@
 				<view class="detail-item">
 					<view class="detail-title">退换货说明</view>
 					<view class="detail-content">
-						<text class="detail-text">1. 虚拟票证购买后不支持退换，请谨慎购买。</text>
-						<text class="detail-text">2. 如有质量问题，请联系客服处理。</text>
-						<text class="detail-text">3. 退款前提：卡片未使用且未过期。</text>
+						<text class="detail-text">1. 虚拟票证购买后，未兑换可申请退款。</text>
+						<text class="detail-text">2. 已兑换的订单不支持退款。</text>
+						<text class="detail-text">3. 如有疑问，请联系客服咨询。</text>
+					</view>
+				</view>
+				
+				<!-- 客服咨询 -->
+				<view class="detail-item">
+					<view class="detail-title">需要帮助？</view>
+					<view class="detail-content">
+						<view class="contact-service-btn" @click="handleContactService" hover-class="button-hover">
+							<text class="service-emoji">💬</text>
+							<text>联系客服咨询</text>
+						</view>
 					</view>
 				</view>
 			</view>
@@ -68,6 +79,7 @@
 import { getProductDetail } from '../../api/product.js';
 import { checkPurchased } from '../../api/membershipCard.js';
 import { isLoggedIn } from '../../utils/auth.js';
+import { openCustomerServiceForProduct } from '../../utils/customer-service.js';
 
 export default {
 	data() {
@@ -135,6 +147,14 @@ export default {
 			// 跳转到确认订单页
 			uni.navigateTo({
 				url: `/pages/confirm-order/confirm-order?productId=${this.productId}`
+			});
+		},
+		
+		// 联系客服（新版API）
+		handleContactService() {
+			openCustomerServiceForProduct({
+				id: this.product.id,
+				name: this.product.name
 			});
 		}
 	}
@@ -271,6 +291,32 @@ export default {
 
 .buy-button::after {
 	border: none;
+}
+
+/* 联系客服按钮 */
+.contact-service-btn {
+	width: 100%;
+	height: 80rpx;
+	background: linear-gradient(135deg, #4CAF50 0%, #297512 100%);
+	color: #ffffff;
+	font-size: 28rpx;
+	font-weight: bold;
+	border-radius: 40rpx;
+	border: none;
+	line-height: 80rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+}
+
+.contact-service-btn::after {
+	border: none;
+}
+
+.service-emoji {
+	margin-right: 8rpx;
+	font-size: 32rpx;
 }
 
 .button-hover {

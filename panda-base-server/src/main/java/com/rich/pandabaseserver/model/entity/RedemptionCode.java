@@ -60,6 +60,11 @@ public class RedemptionCode implements Serializable {
     private LocalDateTime expireTime;
 
     /**
+     * 作废原因
+     */
+    private String voidReason;
+
+    /**
      * 使用时间
      */
     private LocalDateTime useTime;

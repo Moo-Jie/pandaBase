@@ -537,4 +537,49 @@ public class RedemptionCodeServiceImpl extends ServiceImpl<RedemptionCodeMapper,
                 .map(RedemptionCode::getCode)
                 .toList();
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void voidRedemptionCodesByOrderId(Long orderId, String reason) {
+        ThrowUtils.throwIf(orderId == null, ErrorCode.PARAMS_ERROR);
+
+        String batchNo = "ORDER" + orderId;
+
+        // 1. 查找该订单下的所有兑换码
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .where("batch_no = ?", batchNo);
+
+        List<RedemptionCode> codes = this.list(queryWrapper);
+        if (codes == null || codes.isEmpty()) {
+            return;
+        }
+
+        // 2. 批量作废
+        for (RedemptionCode code : codes) {
+            // 只有未使用的才能作废（理论上调用前已经检查过了，这里再次确保安全）
+            if (RedemptionCodeStatusEnum.UNUSED.getValue().equals(code.getStatus())) {
+                code.setStatus(RedemptionCodeStatusEnum.VOID.getValue());
+                code.setVoidReason(reason);
+                code.setUpdateTime(LocalDateTime.now());
+            }
+        }
+
+        this.updateBatch(codes);
+        log.info("订单{}关联的{}个兑换码已作废", orderId, codes.size());
+    }
+
+    @Override
+    public boolean hasUsedRedemptionCode(Long orderId) {
+        ThrowUtils.throwIf(orderId == null, ErrorCode.PARAMS_ERROR);
+
+        String batchNo = "ORDER" + orderId;
+
+        // 查询该订单下是否有 非UNUSED 的兑换码
+        // 只要有一个不是UNUSED，就不能退款
+        long count = this.count(QueryWrapper.create()
+                .where("batch_no = ?", batchNo)
+                .and("status != ?", RedemptionCodeStatusEnum.UNUSED.getValue()));
+
+        return count > 0;
+    }
 }
